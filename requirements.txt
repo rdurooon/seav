@@ -1,2 +1,3 @@
 pywebview
 watchdog
+mysql-connector-python
