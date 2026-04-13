@@ -2,19 +2,88 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEAV - Inicial</title>
-    <link rel="stylesheet" href="css/home.css">
-    <link rel="icon" type="image/png" href="assets/SEAV-logo.png">
-</head>
-<body>
-    <header>
-        <div class="logo-container">
-            <img src="assets/SEAV-logo.png" alt="SEAV Logo" class="logo">
-        </div>
-        <h1>SEAV</h1>
-    </header>
+    <title>SEAV - Sistema</title>
 
-    <script src="js/home.js"></script>
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="icon" type="image/png" href="../assets/SEAV-logo.png">
+</head>
+
+<body>
+
+<header>
+    <div class="logo-container">
+        <img src="../assets/SEAV-logo.png" class="logo">
+    </div>
+    <h1>SEAV</h1>
+</header>
+
+<div class="container">
+
+    <!-- MENU LATERAL -->
+    <aside class="sidebar">
+        <button onclick="mostrarCadastro()">Cadastro</button>
+        <button onclick="mostrarLista()">Moradores</button>
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+        <!-- CADASTRO -->
+        <div id="cadastro" class="pagina">
+            <h2>Cadastro de Morador</h2>
+
+            <!-- MORADOR -->
+            <input id="nome" placeholder="Nome"><br>
+            <input id="cpf" placeholder="CPF (11 dígitos)"><br>
+            <input id="data" type="date"><br>
+            <input id="sexo" placeholder="M ou F"><br>
+
+            <h3>Contato</h3>
+            <input id="celular" placeholder="Celular"><br>
+            <input id="email" placeholder="Email"><br>
+
+            <h3>Endereço</h3>
+            <input id="rua" placeholder="Rua"><br>
+            <input id="numero" placeholder="Número"><br>
+            <input id="bairro" placeholder="Bairro"><br>
+            <input id="cidade" placeholder="Cidade"><br>
+            <input id="estado" placeholder="UF (2 letras)"><br>
+            <input id="cep" placeholder="CEP (8 números)"><br>
+
+            <h3>Veículo</h3>
+            <input id="modelo" placeholder="Modelo"><br>
+            <input id="cor" placeholder="Cor"><br>
+            <input id="placa" placeholder="Placa"><br>
+
+           <button onclick="cadastrar()">Salvar</button>
+
+        </div>
+
+        <!-- LISTA -->
+        <div id="lista" class="pagina" style="display:none;">
+            <h2>Moradores Cadastrados</h2>
+
+            <button onclick="listar()">Atualizar Lista</button>
+
+            <ul id="lista_moradores"></ul>
+        </div>
+
+    </main>
+</div>
+
+<script src="../js/home.js"></script>
+
+<script>
+    function mostrarCadastro() {
+        document.getElementById("cadastro").style.display = "block";
+        document.getElementById("lista").style.display = "none";
+    }
+
+    function mostrarLista() {
+        document.getElementById("cadastro").style.display = "none";
+        document.getElementById("lista").style.display = "block";
+    }
+</script>
+
 </body>
 </html>
