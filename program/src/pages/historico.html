@@ -1,0 +1,37 @@
+<div class="historico-container">
+    <div class="historico-topo">
+        <span id="relogio"></span>
+        <span>Status do sistema: ✓</span>
+    </div>
+
+    <div class="historico-conteudo">
+        <div class="historico-header">
+            <h2>Relatório e Histórico</h2>
+        </div>
+
+        <div class="historico-filtros">
+            <input type="date" id="filtro-data-inicio" placeholder="Data início">
+            <input type="date" id="filtro-data-fim" placeholder="Data fim">
+            <input type="text" id="filtro-placa" placeholder="Placa">
+            <button onclick="filtrar()">Filtrar</button>
+        </div>
+
+        <div class="historico-tabela">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Placa</th>
+                        <th>Veículo</th>
+                        <th>Morador</th>
+                        <th>Endereço</th>
+                        <th>Data e hora</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-historico">
+                    <!-- dados injetados pelo historico.js -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

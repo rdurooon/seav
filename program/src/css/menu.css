@@ -1,0 +1,69 @@
+.menu-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+.menu-esquerda {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px;
+    width: 50%;
+    background-color: var(--cor-fundo);
+}
+
+.menu-topo {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+}
+
+.menu-logo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu-logo img {
+    width: 60px;
+}
+
+.menu-logo h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--cor-principal);
+}
+
+.menu-botoes {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.menu-botoes button {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+}
+
+.menu-rodape {
+    display: flex;
+    gap: 12px;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.menu-direita {
+    width: 50%;
+    background-color: var(--cor-principal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-direita img {
+    width: 80%;
+    opacity: 0.15;
+}

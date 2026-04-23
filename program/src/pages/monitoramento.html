@@ -1,0 +1,36 @@
+<div class="monitoramento-container">
+    <div class="mon-topo">
+        <span id="relogio"></span>
+        <span>Status do sistema: ✓</span>
+    </div>
+
+    <div class="mon-conteudo">
+        <div class="mon-camera">
+            <div class="camera-feed">
+                <p>Aguardando conexão...</p>
+            </div>
+        </div>
+
+        <div class="mon-tabela">
+            <h2>Últimos acessos:</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Placa</th>
+                        <th>Veículo</th>
+                        <th>Morador</th>
+                        <th>Data e hora</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-acessos">
+                    <!-- dados injetados pelo monitoramento.js -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mon-botoes">
+        <button onclick="abrirFecharAcesso()">Abrir/fechar acesso</button>
+        <button onclick="ativarDesativarAutomacao()">Ativar/desativar automação</button>
+    </div>
+</div>
