@@ -1,31 +1,32 @@
+<link rel="stylesheet" href="css/gestao.css" />
 <div class="gestao-container">
-    <div class="gestao-topo">
-        <span id="relogio"></span>
-        <span>Status do sistema: ✓</span>
+  <div class="gestao-topo">
+    <span id="relogio"></span>
+    <span>Status do sistema: ✓</span>
+  </div>
+
+  <div class="gestao-conteudo">
+    <div class="gestao-botoes">
+      <button onclick="abrirModalAdicionar()">Adicionar</button>
+      <button onclick="atualizar()">Atualizar</button>
+      <button onclick="remover()">Remover</button>
+      <button onclick="navegarPara('historico')">Historico</button>
     </div>
 
-    <div class="gestao-conteudo">
-        <div class="gestao-botoes">
-            <button onclick="abrirModalAdicionar()">Adicionar</button>
-            <button onclick="atualizar()">Atualizar</button>
-            <button onclick="remover()">Remover</button>
-            <button onclick="navegarPara('historico')">Historico</button>
-        </div>
-
-        <div class="gestao-tabela">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Placa</th>
-                        <th>Veículo</th>
-                        <th>Morador</th>
-                        <th>Endereço</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-veiculos">
-                    <!-- dados injetados pelo gestao.js -->
-                </tbody>
-            </table>
-        </div>
+    <div class="gestao-tabela">
+      <div class="tabela-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Placa</th>
+              <th>Veículo</th>
+              <th>Morador</th>
+              <th>Endereço</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-veiculos"></tbody>
+        </table>
+      </div>
     </div>
+  </div>
 </div>

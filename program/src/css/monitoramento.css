@@ -1,0 +1,74 @@
+.monitoramento-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px 24px;
+  gap: 16px;
+}
+
+.mon-topo {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+}
+
+.mon-conteudo {
+  display: flex;
+  flex: 1;
+  gap: 24px;
+  overflow: hidden;
+}
+
+.mon-camera {
+  flex: 1;
+}
+
+.camera-feed {
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.camera-feed p {
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.mon-tabela {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.mon-tabela h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.mon-tabela table {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--cor-borda);
+  height: 100%;
+  table-layout: fixed;
+}
+
+.mon-botoes {
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+    padding-bottom: 16px;
+    padding-right: 8px;
+}
+
+.mon-botoes button {
+  padding: 12px 24px;
+}
