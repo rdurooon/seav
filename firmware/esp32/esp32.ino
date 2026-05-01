@@ -20,47 +20,54 @@ typedef struct {
   uint8_t payload[MAX_PAYLOAD_SIZE];
 } DataPacket;
 
-// Função de Callback ajustada para ESP32 Core 3.x
+// Função de Callback de Recebimento
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
   lastReceiveTime = millis();
 
+  // Verifica se o pacote recebido é um pacote de dados de imagem
   if (len == sizeof(DataPacket)) {
     transmissorAtivo = true;
     DataPacket *packet = (DataPacket *)incomingData;
 
+    // Se mudou o ID do frame, resetamos o progresso para começar a nova montagem
     if (packet->frame_id != current_frame_id) {
       current_frame_id = packet->frame_id;
       chunks_received = 0;
-      // Limpamos apenas o início para performance
-      memset(frame_buffer, 0, 512);
     }
 
+    // Calcula a posição no buffer e copia os dados
     size_t offset = packet->chunk_index * MAX_PAYLOAD_SIZE;
     if (offset + packet->payload_len <= MAX_IMAGE_SIZE) {
       memcpy(frame_buffer + offset, packet->payload, packet->payload_len);
       chunks_received++;
     }
 
-    // Lógica de finalização: se chegou o último pacote ou todos os pacotes
-    if (packet->chunk_index == packet->total_chunks - 1 || chunks_received >= packet->total_chunks) {
+    // Lógica de finalização: 
+    // Libera o frame se todos os chunks chegaram OU se o marcador de último chunk foi atingido
+    if (chunks_received == packet->total_chunks || packet->chunk_index == packet->total_chunks - 1) {
       uint32_t final_size = (packet->total_chunks - 1) * MAX_PAYLOAD_SIZE + packet->payload_len;
-
-      if (final_size > MAX_IMAGE_SIZE) final_size = MAX_IMAGE_SIZE;
-
-      // Envia apenas a imagem. Removido o printf de log daqui de dentro.
-      Serial.print("START_IMG");
-      Serial.write(frame_buffer, final_size);
-      Serial.print("END_IMG");
-
-      chunks_received = 0;
+      
+      if(final_size <= MAX_IMAGE_SIZE) {
+        Serial.print("START_IMG");
+        Serial.write(frame_buffer, final_size);
+        Serial.print("END_IMG");
+        
+        // flush() garante que o buffer de saída do ESP32 seja enviado imediatamente para o PC
+        Serial.flush(); 
+      }
+      
+      // Reseta os contadores para evitar processamento duplicado do mesmo frame
+      chunks_received = 0; 
+      current_frame_id = 0; 
     }
+    
   } else {
+    // Lógica de Pareamento/Discovery
     char msg[len + 1];
     memcpy(msg, incomingData, len);
     msg[len] = '\0';
 
     if (strstr(msg, "DISCOVERY")) {
-      // REGISTRO DINÂMICO DO TRANSMISSOR COMO PEER
       if (!esp_now_is_peer_exist(info->src_addr)) {
         esp_now_peer_info_t peerInfo = {};
         memcpy(peerInfo.peer_addr, info->src_addr, 6);
@@ -72,34 +79,34 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 
       const char *reply = "ACK_PAREAR";
       esp_now_send(info->src_addr, (uint8_t *)reply, strlen(reply) + 1);
-      Serial.println("LOG:[PAREAMENTO] Transmissor detectado e ACK enviado.");
+      Serial.println("\n[LOG] Transmissor detectado e ACK enviado.");
     }
   }
 }
 
 void setup() {
+  // Baud rate alto para suportar o fluxo de vídeo sem gargalo
   Serial.begin(921600);
-
-  // Aguarda Serial estabilizar
   delay(1000);
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
 
   if (esp_now_init() != ESP_OK) {
-    Serial.println("LOG:Erro ao iniciar ESP-NOW");
+    Serial.println("\n[LOG] Erro ao iniciar ESP-NOW");
     ESP.restart();
   }
 
-  // CORREÇÃO AQUI: Removido o 'e' extra e o cast desnecessário
+  // Registra a função de callback para o ESP-NOW
   esp_now_register_recv_cb(OnDataRecv);
-
-  Serial.println("LOG:--- RECEPTOR ONLINE E AGUARDANDO ---");
+  
+  Serial.println("\n[LOG] --- RECEPTOR ONLINE E AGUARDANDO ---");
 }
 
 void loop() {
+  // Watchdog simples para detectar perda de sinal
   if (transmissorAtivo && (millis() - lastReceiveTime > timeoutLimit)) {
-    Serial.println("LOG:[WATCHDOG] Conexão com transmissor perdida.");
+    Serial.println("\n[LOG] [WATCHDOG] Conexão com transmissor perdida.");
     transmissorAtivo = false;
     current_frame_id = 0;
   }

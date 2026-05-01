@@ -30,30 +30,32 @@ Preferences pref;
 uint8_t targetMac[6];
 uint8_t broadcastMac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 bool pareado = false;
+int framesPular = 20; 
 int falhasConsecutivas = 0;
-const int MAX_FALHAS = 30;
+const int MAX_FALHAS = 50;
 
-#define MAX_PAYLOAD_SIZE 235 
+#define MAX_PAYLOAD_SIZE 235
+
 typedef struct {
-  uint16_t frame_id;     
-  uint16_t total_chunks; 
-  uint16_t chunk_index;  
-  uint16_t payload_len;  
-  uint8_t payload[MAX_PAYLOAD_SIZE]; 
+  uint16_t frame_id;
+  uint16_t total_chunks;
+  uint16_t chunk_index;
+  uint16_t payload_len;
+  uint8_t payload[MAX_PAYLOAD_SIZE];
 } DataPacket;
 
-// Callback de Envio
+DataPacket packet;
+
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   if (status != ESP_NOW_SEND_SUCCESS) falhasConsecutivas++;
   else falhasConsecutivas = 0;
 }
 
-// Callback de Recebimento (Pareamento)
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
   if (len < 15 && strstr((char*)incomingData, "ACK_PAREAR")) {
     memcpy(targetMac, info->src_addr, 6);
     pref.putBytes("mac", targetMac, 6);
-    Serial.println("\n[SISTEMA] Receptor Encontrado! Reiniciando...");
+    Serial.println("\n[LOG] Receptor Pareado! Reiniciando...");
     delay(500);
     ESP.restart();
   }
@@ -61,10 +63,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 
 void setup() {
   Serial.begin(115200);
-  delay(2000); 
-  Serial.println("\n--- INICIANDO TRANSMISSOR ESP-NOW ---");
-
-  // 1. Configuração da Câmera (Baseada no seu código funcional)
+  
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -84,42 +83,40 @@ void setup() {
   config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 10000000; // 10MHz para maior estabilidade
+  
+  // ULTRA ESTABILIDADE: 6MHz para evitar corrupção por ruído elétrico
+  config.xclk_freq_hz = 6000000; 
   config.pixel_format = PIXFORMAT_JPEG;
   config.grab_mode = CAMERA_GRAB_LATEST;
   config.fb_location = CAMERA_FB_IN_PSRAM;
-  config.jpeg_quality = 12;
-  config.fb_count = 2;
+  
+  // QUALIDADE BAIXA = ESTABILIDADE ALTA
+  config.jpeg_quality = 25; 
+  config.fb_count = 1; // Força processamento serial para evitar conflito de memória
 
-  if (psramFound()) {
-    config.frame_size = FRAMESIZE_VGA; // 640x480 para OCR
-  } else {
-    config.frame_size = FRAMESIZE_SVGA;
-    config.fb_location = CAMERA_FB_IN_DRAM;
-  }
+  config.frame_size = FRAMESIZE_CIF;
 
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
-    Serial.printf("Erro na Câmera: 0x%x. Reiniciando...", err);
-    delay(2000);
     ESP.restart();
   }
-  Serial.println("Câmera: OK");
 
-  // 2. Configuração Wi-Fi / ESP-NOW
+  sensor_t * s = esp_camera_sensor_get();
+  s->set_contrast(s, 2);    
+  s->set_sharpness(s, 2);   
+  // Desativando o AGC agressivo para evitar mudanças bruscas de luz que aumentam o tamanho do frame
+  s->set_gain_ctrl(s, 0);   
+  s->set_agc_gain(s, 5);    
+
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  
+
   pref.begin("automac", false);
   if (pref.getBytes("mac", targetMac, 6) > 0) {
     pareado = true;
-    Serial.printf("MAC do Receptor carregado: %02X:%02X:%02X:%02X:%02X:%02X\n", 
-                  targetMac[0], targetMac[1], targetMac[2], 
-                  targetMac[3], targetMac[4], targetMac[5]);
   }
 
   if (esp_now_init() != ESP_OK) ESP.restart();
-
   esp_now_register_send_cb(esp_now_send_cb_t(OnDataSent));
   esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
 
@@ -133,27 +130,29 @@ void setup() {
 
 void loop() {
   if (pareado && falhasConsecutivas >= MAX_FALHAS) {
-    Serial.println("[ALERTA] Receptor perdido. Resetando pareamento...");
     pref.clear();
-    delay(500);
     ESP.restart();
   }
 
   if (!pareado) {
     const char *msg = "DISCOVERY";
     esp_now_send(broadcastMac, (uint8_t *)msg, strlen(msg) + 1);
-    Serial.println("Buscando receptor via Broadcast...");
     delay(2000);
   } else {
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) return;
 
-    uint16_t frame_id = millis() % 65535;
+    if (framesPular > 0) {
+      esp_camera_fb_return(fb);
+      framesPular--;
+      return;
+    }
+
     uint16_t total_chunks = (fb->len + MAX_PAYLOAD_SIZE - 1) / MAX_PAYLOAD_SIZE;
+    uint16_t f_id = (uint16_t)(millis() & 0xFFFF); 
 
     for (uint16_t i = 0; i < total_chunks; i++) {
-      DataPacket packet;
-      packet.frame_id = frame_id;
+      packet.frame_id = f_id;
       packet.total_chunks = total_chunks;
       packet.chunk_index = i;
       size_t offset = i * MAX_PAYLOAD_SIZE;
@@ -161,11 +160,13 @@ void loop() {
       memcpy(packet.payload, fb->buf + offset, packet.payload_len);
 
       esp_now_send(targetMac, (uint8_t *)&packet, sizeof(DataPacket));
-      delay(12); // Delay seguro para estabilidade do rádio
+      
+      // Aumentado levemente para dar tempo do receptor processar o pacote
+      delayMicroseconds(4000); 
     }
 
-    Serial.printf("Frame enviado: ID %u | %u bytes\n", frame_id, fb->len);
     esp_camera_fb_return(fb);
-    delay(500); // Controle de FPS
+    // Pequena pausa entre frames para resfriar o rádio
+    delay(20); 
   }
 }
