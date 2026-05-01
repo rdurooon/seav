@@ -4,13 +4,12 @@
 #define MAX_PAYLOAD_SIZE 235
 #define MAX_IMAGE_SIZE 40000
 
+// COLOQUE AQUI O MAC DO CONTROLADOR (PORTÃO)
+uint8_t macControlador[] = {0xF0, 0x24, 0xF9, 0x0E, 0x5B, 0xC8}; 
+
 uint8_t frame_buffer[MAX_IMAGE_SIZE];
 uint16_t current_frame_id = 0;
 uint16_t chunks_received = 0;
-
-unsigned long lastReceiveTime = 0;
-const unsigned long timeoutLimit = 6000;
-bool transmissorAtivo = false;
 
 typedef struct {
   uint16_t frame_id;
@@ -20,94 +19,73 @@ typedef struct {
   uint8_t payload[MAX_PAYLOAD_SIZE];
 } DataPacket;
 
-// Função de Callback de Recebimento
+typedef struct {
+  char comando[10];
+  int tempo;
+} ControlPacket;
+
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
-  lastReceiveTime = millis();
-
-  // Verifica se o pacote recebido é um pacote de dados de imagem
+  // Se o tamanho for do pacote de imagem
   if (len == sizeof(DataPacket)) {
-    transmissorAtivo = true;
     DataPacket *packet = (DataPacket *)incomingData;
-
-    // Se mudou o ID do frame, resetamos o progresso para começar a nova montagem
     if (packet->frame_id != current_frame_id) {
       current_frame_id = packet->frame_id;
       chunks_received = 0;
     }
-
-    // Calcula a posição no buffer e copia os dados
     size_t offset = packet->chunk_index * MAX_PAYLOAD_SIZE;
     if (offset + packet->payload_len <= MAX_IMAGE_SIZE) {
       memcpy(frame_buffer + offset, packet->payload, packet->payload_len);
       chunks_received++;
     }
-
-    // Lógica de finalização: 
-    // Libera o frame se todos os chunks chegaram OU se o marcador de último chunk foi atingido
     if (chunks_received == packet->total_chunks || packet->chunk_index == packet->total_chunks - 1) {
       uint32_t final_size = (packet->total_chunks - 1) * MAX_PAYLOAD_SIZE + packet->payload_len;
-      
-      if(final_size <= MAX_IMAGE_SIZE) {
-        Serial.print("START_IMG");
-        Serial.write(frame_buffer, final_size);
-        Serial.print("END_IMG");
-        
-        // flush() garante que o buffer de saída do ESP32 seja enviado imediatamente para o PC
-        Serial.flush(); 
-      }
-      
-      // Reseta os contadores para evitar processamento duplicado do mesmo frame
-      chunks_received = 0; 
-      current_frame_id = 0; 
+      Serial.print("START_IMG");
+      Serial.write(frame_buffer, final_size);
+      Serial.print("END_IMG");
+      Serial.flush(); 
+      chunks_received = 0; current_frame_id = 0; 
     }
+  } 
+  // Se for o Discovery da Câmera
+  else if (strstr((char*)incomingData, "DISCOVERY")) {
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, info->src_addr, 6);
+    peer.channel = 0; peer.encrypt = false; peer.ifidx = WIFI_IF_STA;
+    if (!esp_now_is_peer_exist(info->src_addr)) esp_now_add_peer(&peer);
     
-  } else {
-    // Lógica de Pareamento/Discovery
-    char msg[len + 1];
-    memcpy(msg, incomingData, len);
-    msg[len] = '\0';
-
-    if (strstr(msg, "DISCOVERY")) {
-      if (!esp_now_is_peer_exist(info->src_addr)) {
-        esp_now_peer_info_t peerInfo = {};
-        memcpy(peerInfo.peer_addr, info->src_addr, 6);
-        peerInfo.channel = 0;
-        peerInfo.encrypt = false;
-        peerInfo.ifidx = WIFI_IF_STA;
-        esp_now_add_peer(&peerInfo);
-      }
-
-      const char *reply = "ACK_PAREAR";
-      esp_now_send(info->src_addr, (uint8_t *)reply, strlen(reply) + 1);
-      Serial.println("\n[LOG] Transmissor detectado e ACK enviado.");
-    }
+    const char *reply = "ACK_PAREAR";
+    esp_now_send(info->src_addr, (uint8_t *)reply, strlen(reply) + 1);
   }
 }
 
 void setup() {
-  // Baud rate alto para suportar o fluxo de vídeo sem gargalo
-  Serial.begin(921600);
-  delay(1000);
-
+  Serial.begin(921600); // Baud rate alto para o vídeo
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
 
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("\n[LOG] Erro ao iniciar ESP-NOW");
-    ESP.restart();
-  }
-
-  // Registra a função de callback para o ESP-NOW
+  if (esp_now_init() != ESP_OK) ESP.restart();
   esp_now_register_recv_cb(OnDataRecv);
-  
-  Serial.println("\n[LOG] --- RECEPTOR ONLINE E AGUARDANDO ---");
+
+  // Adiciona o Portão como peer para podermos enviar comandos
+  esp_now_peer_info_t peerControl = {};
+  memcpy(peerControl.peer_addr, macControlador, 6);
+  peerControl.channel = 0; peerControl.encrypt = false; peerControl.ifidx = WIFI_IF_STA;
+  esp_now_add_peer(&peerControl);
 }
 
 void loop() {
-  // Watchdog simples para detectar perda de sinal
-  if (transmissorAtivo && (millis() - lastReceiveTime > timeoutLimit)) {
-    Serial.println("\n[LOG] [WATCHDOG] Conexão com transmissor perdida.");
-    transmissorAtivo = false;
-    current_frame_id = 0;
+  // Comando do Python: "OPEN 5" ou "CLOSE 5"
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    ControlPacket cp;
+    if (input.startsWith("OPEN")) {
+      strcpy(cp.comando, "ABRIR");
+      cp.tempo = input.substring(5).toInt();
+      esp_now_send(macControlador, (uint8_t *)&cp, sizeof(ControlPacket));
+    } else if (input.startsWith("CLOSE")) {
+      strcpy(cp.comando, "FECHAR");
+      cp.tempo = input.substring(6).toInt();
+      esp_now_send(macControlador, (uint8_t *)&cp, sizeof(ControlPacket));
+    }
   }
 }
