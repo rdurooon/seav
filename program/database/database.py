@@ -1,6 +1,4 @@
-import webview
 import mysql.connector
-from pathlib import Path
 
 class Api:
 
@@ -79,7 +77,7 @@ class Api:
         cursor = conexao.cursor()
 
         cursor.execute("""
-            SELECT 
+            SELECT
                 m.id_morador,
                 m.nome,
                 m.cpf,
@@ -104,7 +102,7 @@ class Api:
 
         try:
             cursor.execute("""
-                SELECT 
+                SELECT
                     m.id_morador,
                     m.nome,
                     m.cpf,
@@ -227,22 +225,3 @@ class Api:
         finally:
             cursor.close()
             conexao.close()
-
-
-# ---------------- APP ----------------
-
-api = Api()
-
-BASE_DIR = Path(__file__).resolve().parent
-HTML_PATH = BASE_DIR.parent / "program" / "src" / "home.html"
-
-window = webview.create_window(
-    "Sistema Condomínio",
-    str(HTML_PATH),
-    js_api=api,
-    width=1980,
-    height=1080,
-    resizable=False
-)
-
-webview.start(debug=True)

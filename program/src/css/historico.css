@@ -1,0 +1,13 @@
+.tabela-historico {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+    height: 100%;
+}
+
+.tabela-historico {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
