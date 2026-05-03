@@ -1,22 +1,178 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>SEAV - Sistema Embarcado de Acesso Veicular</title>
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/home.css">
-    <link rel="icon" type="image/png" href="assets/SEAV-logo.png">
-</head>
-<body>
-
-    <button id="btn-voltar" onclick="navegarPara('menu')" style="display:none;">← Voltar</button>
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/modal.css" />
+    <link rel="icon" type="image/png" href="assets/SEAV-logo.png" />
+  </head>
+  <body>
+    <button id="btn-voltar" onclick="navegarPara('menu')" style="display: none">
+      ← Voltar
+    </button>
 
     <main id="content"></main>
 
-    <div id="modal-adicionar" class="modal" style="display:none;"></div>
-    <div id="modal-acesso" class="modal" style="display:none;"></div>
+    <!-- MODAL INFO -->
+    <div id="modal-info" class="modal-overlay">
+      <div class="modal-box" style="width: 400px">
+        <h2 class="modal-titulo">Sobre o SEAV</h2>
+        <p style="font-size: 0.9rem"><strong>Versão:</strong> 1.0</p>
+        <p style="font-size: 0.9rem"><strong>Criadores:</strong></p>
+        <ul style="font-size: 0.9rem; padding-left: 20px; line-height: 2">
+          <li>Leandro Marques</li>
+          <li>Pedro Smith</li>
+          <li>Ruan Durão</li>
+          <li>Lucas Mendes</li>
+          <li>Fábio Martel</li>
+        </ul>
+        <div class="modal-rodape">
+          <button onclick="fecharInfo()">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIG -->
+    <div id="modal-config" class="modal-overlay">
+      <div class="modal-box" style="width: 400px">
+        <h2 class="modal-titulo">Configurações</h2>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <label style="font-size: 0.9rem; font-weight: 600"
+            >Porta do receptor: COM</label
+          >
+          <input
+            type="number"
+            id="porta-com"
+            min="1"
+            max="9"
+            placeholder="1~9"
+            style="
+              width: 60px;
+              padding: 6px 10px;
+              border: 1.5px solid var(--cor-borda);
+              border-radius: 6px;
+              font-size: 0.9rem;
+            "
+          />
+        </div>
+        <div class="modal-rodape">
+          <button class="btn-cancelar" onclick="fecharConfig()">
+            Cancelar
+          </button>
+          <button onclick="salvarConfig()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL ADICIONAR -->
+    <div id="modal-adicionar" class="modal-overlay">
+      <div
+        class="modal-box"
+        style="width: 600px; max-height: 80vh; overflow-y: auto"
+      >
+        <h2 class="modal-titulo">Adicionar</h2>
+        <div class="modal-grid">
+          <div class="modal-secao">Morador</div>
+          <input id="add-nome" placeholder="Nome completo" />
+          <input
+            id="add-cpf"
+            placeholder="CPF (000.000.000-00)"
+            maxlength="14"
+          />
+          <input id="add-data" type="date" />
+          <select id="add-sexo">
+            <option value="">Sexo</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select>
+
+          <div class="modal-secao">Contato</div>
+          <input
+            id="add-celular"
+            placeholder="Celular (00) 00000-0000"
+            maxlength="15"
+          />
+          <input id="add-email" placeholder="Email" />
+
+          <div class="modal-secao">Endereço</div>
+          <input id="add-cep" placeholder="CEP (00000-000)" maxlength="9" />
+          <input id="add-numero" placeholder="Número" />
+          <input id="add-rua" placeholder="Rua" readonly />
+          <input id="add-bairro" placeholder="Bairro" readonly />
+          <input id="add-cidade" placeholder="Cidade" readonly />
+          <input id="add-estado" placeholder="UF" readonly />
+
+          <div class="modal-secao">Veículo</div>
+          <input id="add-modelo" placeholder="Modelo" />
+          <input id="add-cor" placeholder="Cor" />
+          <input id="add-placa" placeholder="Placa" />
+        </div>
+        <div class="modal-rodape">
+          <button class="btn-cancelar" onclick="fecharModalAdicionar()">
+            Cancelar
+          </button>
+          <button onclick="salvarAdicionar()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL ATUALIZAR -->
+    <div id="modal-atualizar" class="modal-overlay">
+      <div
+        class="modal-box"
+        style="width: 600px; max-height: 80vh; overflow-y: auto"
+      >
+        <h2 class="modal-titulo">Atualizar</h2>
+        <div class="modal-grid">
+          <div class="modal-secao">Morador</div>
+          <input id="upd-nome" placeholder="Nome completo" />
+          <input
+            id="upd-cpf"
+            placeholder="CPF (000.000.000-00)"
+            maxlength="14"
+          />
+          <input id="upd-data" type="date" />
+          <select id="upd-sexo">
+            <option value="">Sexo</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select>
+
+          <div class="modal-secao">Contato</div>
+          <input
+            id="upd-celular"
+            placeholder="Celular (00) 00000-0000"
+            maxlength="15"
+          />
+          <input id="upd-email" placeholder="Email" />
+
+          <div class="modal-secao">Endereço</div>
+          <input id="upd-cep" placeholder="CEP (00000-000)" maxlength="9" />
+          <input id="upd-numero" placeholder="Número" />
+          <input id="upd-rua" placeholder="Rua" readonly />
+          <input id="upd-bairro" placeholder="Bairro" readonly />
+          <input id="upd-cidade" placeholder="Cidade" readonly />
+          <input id="upd-estado" placeholder="UF" readonly />
+
+          <div class="modal-secao">Veículo</div>
+          <input id="upd-modelo" placeholder="Modelo" />
+          <input id="upd-cor" placeholder="Cor" />
+          <input id="upd-placa" placeholder="Placa" />
+        </div>
+        <div class="modal-rodape">
+          <button class="btn-cancelar" onclick="fecharModalAtualizar()">
+            Cancelar
+          </button>
+          <button onclick="salvarAtualizar()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL ACESSO -->
+    <div id="modal-acesso" class="modal-overlay"></div>
 
     <script src="js/home.js"></script>
-
-</body>
+  </body>
 </html>
