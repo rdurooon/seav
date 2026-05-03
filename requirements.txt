@@ -2,3 +2,4 @@ pywebview
 watchdog
 mysql-connector-python
 screeninfo
+pyserial

@@ -58,6 +58,24 @@ function fecharConfig() {
   document.getElementById("modal-config").style.display = "none";
 }
 
+async function autodetectarPorta() {
+  try {
+    const portas = await window.pywebview.api.detectar_portas();
+    if (portas.length === 0) {
+      alert("Nenhuma porta serial detectada!");
+      return;
+    }
+    
+    // Para simplificar, assume que a primeira porta é a do ESP32
+    // Em uma implementação mais avançada, poderia verificar qual é a correta
+    const portaDetectada = portas[0].replace('COM', '');
+    document.getElementById("porta-com").value = portaDetectada;
+    alert(`Porta detectada: COM${portaDetectada}`);
+  } catch (error) {
+    alert("Erro ao detectar portas: " + error);
+  }
+}
+
 function salvarConfig() {
   const porta = document.getElementById("porta-com").value;
   if (!porta || porta < 1 || porta > 9) {
