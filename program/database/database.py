@@ -3,12 +3,13 @@ import mysql.connector
 class Api:
 
     def conectar(self):
-        return mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="root",
-            database="condominio"
-        )
+     return mysql.connector.connect(
+        host="",
+        port=3306,
+        user="",
+        password="",
+        database=""
+    )
 
     # ---------------- CREATE ----------------
     def cadastrar_completo(self, dados):

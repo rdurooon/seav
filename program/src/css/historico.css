@@ -1,13 +1,64 @@
-.tabela-historico {
-    flex: 1;
+.historico-container {
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    padding: 16px 24px;
     gap: 12px;
-    overflow: hidden;
-    height: 100%;
 }
 
-.tabela-historico {
+.historico-topo {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    color: var(--cor-texto);
+}
+
+.historico-conteudo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.historico-header h2 {
     font-size: 1.2rem;
     font-weight: 700;
+    color: var(--cor-texto);
+}
+
+.historico-filtros {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.historico-filtros input {
+    border: 1.5px solid var(--cor-borda);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-family: var(--fonte);
+    color: var(--cor-texto);
+    background: var(--cor-fundo);
+    width: 130px;
+}
+
+.historico-filtros button {
+    padding: 6px 18px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+}
+
+.historico-tabela {
+    flex: 1;
+    border: 2px solid var(--cor-borda);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.historico-tabela table {
+    width: 100%;
+    height: 100%;
+    table-layout: fixed;
 }

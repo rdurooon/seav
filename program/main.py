@@ -42,7 +42,8 @@ if __name__ == '__main__':
         height=altura,
         x=x_pos,
         y=y_pos,
-        js_api=api
+        js_api=api,
+        resizable=False
     )
 
     start_watching()

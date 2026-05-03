@@ -64,3 +64,12 @@
   font-size: 1rem;
   border-radius: 10px;
 }
+
+.linha-selecionada {
+  background-color: #d0e8ff !important;
+  cursor: pointer;
+}
+
+.tabela-wrapper tr {
+  cursor: pointer;
+}
