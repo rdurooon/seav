@@ -1,4 +1,5 @@
 from database.database import Api
+import serial.tools.list_ports
 
 class API:
     def __init__(self):
@@ -22,3 +23,10 @@ class API:
 
     def deletar_morador(self, id_morador):
         return self.db.deletar_morador(id_morador)
+
+    def detectar_portas(self):
+        portas = serial.tools.list_ports.comports()
+        portas_disponiveis = []
+        for porta in portas:
+            portas_disponiveis.append(porta.device)
+        return portas_disponiveis
