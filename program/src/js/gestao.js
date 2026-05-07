@@ -199,6 +199,17 @@ function fecharModalAtualizar() {
     document.getElementById('modal-atualizar').style.display = 'none'
 }
 
+// Atualizar status do sistema
+function atualizarStatus() {
+  pywebview.api.get_status().then(status => {
+    const el = document.getElementById('status-sistema');
+    if (el) el.textContent = `Status do sistema: ${status}`;
+  });
+}
+
+// Inicializar
+atualizarStatus();
+
 async function salvarAtualizar() {
     const cpf = document.getElementById('upd-cpf').value
     if (!validarCPF(cpf)) {

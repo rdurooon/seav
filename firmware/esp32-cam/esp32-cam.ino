@@ -46,16 +46,19 @@ typedef struct {
 
 DataPacket packet;
 
+// Callback de envio: Monitora se o receptor ainda está "vivo"
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   if (status != ESP_NOW_SEND_SUCCESS) falhasConsecutivas++;
   else falhasConsecutivas = 0;
 }
 
+// Callback de recebimento: Lógica de Pareamento Dinâmico
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
-  if (len < 15 && strstr((char*)incomingData, "ACK_PAREAR")) {
+  // ATUALIZAÇÃO: Agora verifica o token específico "ACK_CAM"
+  if (len < 20 && strstr((char*)incomingData, "ACK_CAM")) {
     memcpy(targetMac, info->src_addr, 6);
     pref.putBytes("mac", targetMac, 6);
-    Serial.println("\n[LOG] Receptor Pareado! Reiniciando...");
+    Serial.println("\n[LOG] Receptor SEAV Identificado! Reiniciando...");
     delay(500);
     ESP.restart();
   }
@@ -64,6 +67,30 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 void setup() {
   Serial.begin(115200);
   
+  // 1. INICIALIZAÇÃO DO RÁDIO (Staged Boot para evitar Brownout)
+  WiFi.mode(WIFI_STA);
+  WiFi.setChannel(1);
+  WiFi.disconnect();
+
+  pref.begin("automac", false);
+  if (pref.getBytes("mac", targetMac, 6) > 0) {
+    pareado = true;
+  }
+
+  if (esp_now_init() != ESP_OK) ESP.restart();
+  
+  // Cast para compatibilidade com ESP32 Core 3.x
+  esp_now_register_send_cb((esp_now_send_cb_t)OnDataSent);
+  esp_now_register_recv_cb((esp_now_recv_cb_t)OnDataRecv);
+
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, pareado ? targetMac : broadcastMac, 6);
+  peerInfo.channel = 1;  
+  peerInfo.encrypt = false;
+  peerInfo.ifidx = WIFI_IF_STA;
+  esp_now_add_peer(&peerInfo);
+
+  // 2. INICIALIZAÇÃO DA CÂMERA
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -83,65 +110,41 @@ void setup() {
   config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  
-  // ULTRA ESTABILIDADE: 6MHz para evitar corrupção por ruído elétrico
-  config.xclk_freq_hz = 6000000; 
+  config.xclk_freq_hz = 6000000; // Estabilidade de sinal
   config.pixel_format = PIXFORMAT_JPEG;
   config.grab_mode = CAMERA_GRAB_LATEST;
   config.fb_location = CAMERA_FB_IN_PSRAM;
-  
-  // QUALIDADE BAIXA = ESTABILIDADE ALTA
-  config.jpeg_quality = 25; 
-  config.fb_count = 1; // Força processamento serial para evitar conflito de memória
-
+  config.jpeg_quality = 20; // Qualidade otimizada para OCR
+  config.fb_count = 1;
   config.frame_size = FRAMESIZE_CIF;
 
   esp_err_t err = esp_camera_init(&config);
-  if (err != ESP_OK) {
-    ESP.restart();
-  }
+  if (err != ESP_OK) ESP.restart();
 
   sensor_t * s = esp_camera_sensor_get();
-  s->set_contrast(s, 2);    
-  s->set_sharpness(s, 2);   
-  // Desativando o AGC agressivo para evitar mudanças bruscas de luz que aumentam o tamanho do frame
   s->set_gain_ctrl(s, 0);   
   s->set_agc_gain(s, 5);    
-
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-
-  pref.begin("automac", false);
-  if (pref.getBytes("mac", targetMac, 6) > 0) {
-    pareado = true;
-  }
-
-  if (esp_now_init() != ESP_OK) ESP.restart();
-  esp_now_register_send_cb(esp_now_send_cb_t(OnDataSent));
-  esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
-
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, pareado ? targetMac : broadcastMac, 6);
-  peerInfo.channel = 0;  
-  peerInfo.encrypt = false;
-  peerInfo.ifidx = WIFI_IF_STA;
-  esp_now_add_peer(&peerInfo);
 }
 
 void loop() {
+  // Se houver muitas falhas seguidas, limpa o pareamento e busca novamente
   if (pareado && falhasConsecutivas >= MAX_FALHAS) {
+    Serial.println("[ALERTA] Conexão Perdida. Resetando MAC...");
     pref.clear();
     ESP.restart();
   }
 
   if (!pareado) {
-    const char *msg = "DISCOVERY";
+    // ATUALIZAÇÃO: Identificador Único da Câmera SEAV
+    const char *msg = "DISC_CAM"; 
     esp_now_send(broadcastMac, (uint8_t *)msg, strlen(msg) + 1);
+    Serial.println("[BUSCA] Enviando DISC_CAM...");
     delay(2000);
   } else {
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) return;
 
+    // Pula os primeiros frames para estabilizar o sensor óptico
     if (framesPular > 0) {
       esp_camera_fb_return(fb);
       framesPular--;
@@ -161,12 +164,11 @@ void loop() {
 
       esp_now_send(targetMac, (uint8_t *)&packet, sizeof(DataPacket));
       
-      // Aumentado levemente para dar tempo do receptor processar o pacote
-      delayMicroseconds(4000); 
+      // Delay micro para não sobrecarregar o buffer do receptor
+      delayMicroseconds(3500); 
     }
 
     esp_camera_fb_return(fb);
-    // Pequena pausa entre frames para resfriar o rádio
-    delay(20); 
+    delay(10); // Controle de FPS
   }
 }
