@@ -7,6 +7,7 @@ async function navegarPara(pagina) {
     btnVoltar.style.display = pagina === 'menu' ? 'none' : 'block'
 
     iniciarRelogio()
+    atualizarStatus()
 
     const paginasComJS = ['gestao', 'monitoramento', 'historico']
     
@@ -51,6 +52,11 @@ function fecharInfo() {
 }
 
 function abrirConfig() {
+  pywebview.api.carregar_porta().then(porta => {
+    if (porta) {
+      document.getElementById("porta-com").value = porta;
+    }
+  });
   document.getElementById("modal-config").style.display = "flex";
 }
 
@@ -82,8 +88,24 @@ function salvarConfig() {
     alert("Digite uma porta válida entre 1 e 9!");
     return;
   }
-  // salva localmente por enquanto
-  localStorage.setItem("porta-com", porta);
-  alert(`Porta COM${porta} salva!`);
-  fecharConfig();
+  // Conectar à porta
+  pywebview.api.conectar_porta(porta).then(result => {
+    if (result === "Conectado") {
+      alert(`Porta COM${porta} conectada e salva!`);
+      fecharConfig();
+    } else {
+      alert("Erro ao conectar à porta!");
+    }
+  });
 }
+
+// Atualizar status do sistema
+function atualizarStatus() {
+  pywebview.api.get_status().then(status => {
+    const el = document.getElementById('status-sistema');
+    if (el) el.textContent = `Status do sistema: ${status}`;
+  });
+}
+
+// Atualizar a cada 2 segundos
+setInterval(atualizarStatus, 2000);

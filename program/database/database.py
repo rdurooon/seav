@@ -226,3 +226,50 @@ class Api:
         finally:
             cursor.close()
             conexao.close()
+
+    # ---------------- CONFIG ----------------
+    def salvar_config(self, chave, valor):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+
+        try:
+            # Criar tabela se não existe
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS config (
+                    chave VARCHAR(255) PRIMARY KEY,
+                    valor TEXT
+                )
+            """)
+            cursor.execute("""
+                INSERT INTO config (chave, valor) VALUES (%s, %s)
+                ON DUPLICATE KEY UPDATE valor = %s
+            """, (chave, valor, valor))
+            conexao.commit()
+            return "Config salva!"
+        except Exception as e:
+            conexao.rollback()
+            return str(e)
+        finally:
+            cursor.close()
+            conexao.close()
+
+    def carregar_config(self, chave):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+
+        try:
+            # Criar tabela se não existe
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS config (
+                    chave VARCHAR(255) PRIMARY KEY,
+                    valor TEXT
+                )
+            """)
+            cursor.execute("SELECT valor FROM config WHERE chave = %s", (chave,))
+            result = cursor.fetchone()
+            return result[0] if result else None
+        except Exception as e:
+            return str(e)
+        finally:
+            cursor.close()
+            conexao.close()
