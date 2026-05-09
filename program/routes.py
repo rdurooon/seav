@@ -1,26 +1,22 @@
 from database.database import Api
+from serial_reader import SerialReader
 import serial.tools.list_ports
-import serial
-import threading
-import time
 
 class API:
     def __init__(self):
         self.db = Api()
-        self.serial_conn = None
-        self.status = "🚫"
+        self.serial_reader = SerialReader()
+        self.window = None
+
+    def set_window(self, window):
+        self.window = window
+        self.serial_reader.window = window
 
     def connect_serial(self, port):
-        try:
-            self.serial_conn = serial.Serial(port, 921600, timeout=2)
-            self.status = "❌"
-        except:
-            self.serial_conn = None
-            self.status = "🚫"
+        return self.serial_reader.connect(port)
 
     def conectar_porta(self, porta):
-        self.connect_serial(f"COM{porta}")
-        if self.serial_conn:
+        if self.connect_serial(f"COM{porta}"):
             self.db.salvar_config("porta_com", porta)
             return "Conectado"
         return "Erro"
@@ -32,18 +28,7 @@ class API:
         return "SEAV funcionando!"
 
     def get_status(self):
-        if self.serial_conn:
-            try:
-                self.serial_conn.reset_input_buffer()
-                self.serial_conn.write(b"GET_STATUS\n")
-                time.sleep(0.2)
-                line = self.serial_conn.readline().decode('utf-8').strip()
-                if line.startswith("STATUS:"):
-                    self.status = line.split(":")[1]
-            except:
-                self.serial_conn = None
-                self.status = "🚫"
-        return self.status
+        return self.serial_reader.get_status()
 
     # Métodos expostos para o frontend
     def cadastrar_completo(self, dados):

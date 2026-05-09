@@ -3,3 +3,4 @@ watchdog
 mysql-connector-python
 screeninfo
 pyserial
+Pillow
