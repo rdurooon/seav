@@ -46,5 +46,6 @@ if __name__ == '__main__':
         resizable=False
     )
 
+    api.set_window(window)
     start_watching()
     webview.start()
