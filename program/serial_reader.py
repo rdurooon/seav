@@ -12,7 +12,7 @@ except ImportError:
 class SerialReader:
     def __init__(self):
         self.serial_conn = None
-        self.window = None
+        self.__on_frame = None
         self.status = "🚫"
         self.last_frame = None
         self._text_buffer = b''
@@ -37,6 +37,9 @@ class SerialReader:
 
     def get_status(self):
         return self.status
+
+    def set_frame_callback(self, callback):
+        self.__on_frame = callback
 
     def _read_loop(self):
         while True:
@@ -95,9 +98,7 @@ class SerialReader:
         self.last_frame = img_bytes
         if not img_bytes:
             return
-        if not self.window:
-            return
-        if not getattr(self.window.events.shown, 'is_set', lambda: False)():
+        if not self.__on_frame:
             return
         try:
             if Image is not None:
@@ -110,6 +111,6 @@ class SerialReader:
                 except Exception as image_error:
                     print(f"Pillow failed to rotate image: {image_error}")
             b64 = base64.b64encode(img_bytes).decode('utf-8')
-            self.window.run_js(f"updateCameraStream('data:image/jpeg;base64,{b64}')")
+            self.__on_frame(b64)
         except Exception as e:
             print(f"Erro ao atualizar camera: {e}")
