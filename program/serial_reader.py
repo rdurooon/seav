@@ -97,6 +97,8 @@ class SerialReader:
             return
         if not self.window:
             return
+        if not getattr(self.window.events.shown, 'is_set', lambda: False)():
+            return
         try:
             if Image is not None:
                 try:
@@ -108,6 +110,6 @@ class SerialReader:
                 except Exception as image_error:
                     print(f"Pillow failed to rotate image: {image_error}")
             b64 = base64.b64encode(img_bytes).decode('utf-8')
-            self.window.evaluate_js(f"updateCameraStream('data:image/jpeg;base64,{b64}')")
+            self.window.run_js(f"updateCameraStream('data:image/jpeg;base64,{b64}')")
         except Exception as e:
             print(f"Erro ao atualizar camera: {e}")
