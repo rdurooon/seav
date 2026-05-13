@@ -9,8 +9,12 @@ class API:
         self.window = None
 
     def set_window(self, window):
-        self.window = window
-        self.serial_reader.window = window
+        self.__window = window
+        self.serial_reader.set_frame_callback(
+            lambda b64: window.run_js(
+                f"updateCameraStream('data:image/jpeg;base64,{b64}')"
+            )
+        )
 
     def connect_serial(self, port):
         return self.serial_reader.connect(port)
