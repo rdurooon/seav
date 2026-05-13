@@ -72,6 +72,7 @@ function abrirModalAdicionar() {
 
 function fecharModalAdicionar() {
   document.getElementById("modal-adicionar").style.display = "none";
+  limparModalAdicionar();
 }
 
 async function salvarAdicionar() {
@@ -116,42 +117,45 @@ async function salvarAdicionar() {
 
 // MÁSCARA CPF
 document.addEventListener("input", function (e) {
-    if (e.target.id === "add-cpf" || e.target.id === "upd-cpf") {
-        let v = e.target.value.replace(/\D/g, "");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-        e.target.value = v;
-    }
-    if (e.target.id === "add-cep" || e.target.id === "upd-cep") {
-        let v = e.target.value.replace(/\D/g, "");
-        v = v.replace(/(\d{5})(\d)/, "$1-$2");
-        e.target.value = v;
-        if (v.length === 9) buscarCep(v, e.target.id.startsWith("upd"));
-    }
-    if (e.target.id === "add-celular" || e.target.id === "upd-celular") {
-        let v = e.target.value.replace(/\D/g, "");
-        v = v.replace(/(\d{2})(\d)/, "($1) $2");
-        v = v.replace(/(\d{5})(\d)/, "$1-$2");
-        e.target.value = v;
-    }
+  if (e.target.id === "add-cpf" || e.target.id === "upd-cpf") {
+    let v = e.target.value.replace(/\D/g, "");
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    e.target.value = v;
+  }
+  if (e.target.id === "add-cep" || e.target.id === "upd-cep") {
+    let v = e.target.value.replace(/\D/g, "");
+    v = v.replace(/(\d{5})(\d)/, "$1-$2");
+    e.target.value = v;
+    if (v.length === 9) buscarCep(v, e.target.id.startsWith("upd"));
+  }
+  if (e.target.id === "add-celular" || e.target.id === "upd-celular") {
+    let v = e.target.value.replace(/\D/g, "");
+    v = v.replace(/(\d{2})(\d)/, "($1) $2");
+    v = v.replace(/(\d{5})(\d)/, "$1-$2");
+    e.target.value = v;
+  }
 });
 
 async function buscarCep(cep, isUpdate = false) {
-    const cepLimpo = cep.replace(/\D/g, "");
-    if (cepLimpo.length !== 8) return;
-    const prefixo = isUpdate ? "upd" : "add";
-    try {
-        const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-        const data = await res.json();
-        if (data.erro) { alert("CEP não encontrado!"); return; }
-        document.getElementById(`${prefixo}-rua`).value = data.logradouro;
-        document.getElementById(`${prefixo}-bairro`).value = data.bairro;
-        document.getElementById(`${prefixo}-cidade`).value = data.localidade;
-        document.getElementById(`${prefixo}-estado`).value = data.uf;
-    } catch (e) {
-        alert("Erro ao buscar CEP!");
+  const cepLimpo = cep.replace(/\D/g, "");
+  if (cepLimpo.length !== 8) return;
+  const prefixo = isUpdate ? "upd" : "add";
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+    const data = await res.json();
+    if (data.erro) {
+      alert("CEP não encontrado!");
+      return;
     }
+    document.getElementById(`${prefixo}-rua`).value = data.logradouro;
+    document.getElementById(`${prefixo}-bairro`).value = data.bairro;
+    document.getElementById(`${prefixo}-cidade`).value = data.localidade;
+    document.getElementById(`${prefixo}-estado`).value = data.uf;
+  } catch (e) {
+    alert("Erro ao buscar CEP!");
+  }
 }
 
 // VALIDAÇÃO CPF
@@ -170,39 +174,53 @@ function validarCPF(cpf) {
   return resto === parseInt(cpf[10]);
 }
 
-
 function abrirModalAtualizar(dados) {
-    const [id, nome, cpf, dataNasc, sexo, celular, email,
-           rua, numero, bairro, cidade, estado, cep,
-           modelo, cor, placa] = dados
+  const [
+    id,
+    nome,
+    cpf,
+    dataNasc,
+    sexo,
+    celular,
+    email,
+    rua,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    cep,
+    modelo,
+    cor,
+    placa,
+  ] = dados;
 
-    document.getElementById('upd-nome').value = nome || ''
-    document.getElementById('upd-cpf').value = cpf || ''
-    document.getElementById('upd-data').value = dataNasc || ''
-    document.getElementById('upd-sexo').value = sexo || ''
-    document.getElementById('upd-celular').value = celular || ''
-    document.getElementById('upd-email').value = email || ''
-    document.getElementById('upd-rua').value = rua || ''
-    document.getElementById('upd-numero').value = numero || ''
-    document.getElementById('upd-bairro').value = bairro || ''
-    document.getElementById('upd-cidade').value = cidade || ''
-    document.getElementById('upd-estado').value = estado || ''
-    document.getElementById('upd-cep').value = cep || ''
-    document.getElementById('upd-modelo').value = modelo || ''
-    document.getElementById('upd-cor').value = cor || ''
-    document.getElementById('upd-placa').value = placa || ''
+  document.getElementById("upd-nome").value = nome || "";
+  document.getElementById("upd-cpf").value = cpf || "";
+  document.getElementById("upd-data").value = dataNasc || "";
+  document.getElementById("upd-sexo").value = sexo || "";
+  document.getElementById("upd-celular").value = celular || "";
+  document.getElementById("upd-email").value = email || "";
+  document.getElementById("upd-rua").value = rua || "";
+  document.getElementById("upd-numero").value = numero || "";
+  document.getElementById("upd-bairro").value = bairro || "";
+  document.getElementById("upd-cidade").value = cidade || "";
+  document.getElementById("upd-estado").value = estado || "";
+  document.getElementById("upd-cep").value = cep || "";
+  document.getElementById("upd-modelo").value = modelo || "";
+  document.getElementById("upd-cor").value = cor || "";
+  document.getElementById("upd-placa").value = placa || "";
 
-    document.getElementById('modal-atualizar').style.display = 'flex'
+  document.getElementById("modal-atualizar").style.display = "flex";
 }
 
 function fecharModalAtualizar() {
-    document.getElementById('modal-atualizar').style.display = 'none'
+  document.getElementById("modal-atualizar").style.display = "none";
 }
 
 // Atualizar status do sistema
 function atualizarStatus() {
-  pywebview.api.get_status().then(status => {
-    const el = document.getElementById('status-sistema');
+  pywebview.api.get_status().then((status) => {
+    const el = document.getElementById("status-sistema");
     if (el) el.textContent = `Status do sistema: ${status}`;
   });
 }
@@ -211,42 +229,62 @@ function atualizarStatus() {
 atualizarStatus();
 
 async function salvarAtualizar() {
-    const cpf = document.getElementById('upd-cpf').value
-    if (!validarCPF(cpf)) {
-        alert('CPF inválido!')
-        return
-    }
+  const cpf = document.getElementById("upd-cpf").value;
+  if (!validarCPF(cpf)) {
+    alert("CPF inválido!");
+    return;
+  }
 
-    const btnSalvar = document.querySelector('#modal-atualizar button:last-child')
-    btnSalvar.disabled = true
-    btnSalvar.textContent = 'Salvando...'
+  const btnSalvar = document.querySelector(
+    "#modal-atualizar button:last-child",
+  );
+  btnSalvar.disabled = true;
+  btnSalvar.textContent = "Salvando...";
 
-    const dados = {
-        id_morador:      idSelecionado,
-        nome:            document.getElementById('upd-nome').value,
-        cpf:             document.getElementById('upd-cpf').value,
-        data_nascimento: document.getElementById('upd-data').value,
-        sexo:            document.getElementById('upd-sexo').value,
-        celular:         document.getElementById('upd-celular').value,
-        email:           document.getElementById('upd-email').value,
-        rua:             document.getElementById('upd-rua').value,
-        numero:          document.getElementById('upd-numero').value,
-        bairro:          document.getElementById('upd-bairro').value,
-        cidade:          document.getElementById('upd-cidade').value,
-        estado:          document.getElementById('upd-estado').value,
-        cep:             document.getElementById('upd-cep').value,
-        modelo:          document.getElementById('upd-modelo').value,
-        cor:             document.getElementById('upd-cor').value,
-        placa:           document.getElementById('upd-placa').value,
-    }
+  const dados = {
+    id_morador: idSelecionado,
+    nome: document.getElementById("upd-nome").value,
+    cpf: document.getElementById("upd-cpf").value,
+    data_nascimento: document.getElementById("upd-data").value,
+    sexo: document.getElementById("upd-sexo").value,
+    celular: document.getElementById("upd-celular").value,
+    email: document.getElementById("upd-email").value,
+    rua: document.getElementById("upd-rua").value,
+    numero: document.getElementById("upd-numero").value,
+    bairro: document.getElementById("upd-bairro").value,
+    cidade: document.getElementById("upd-cidade").value,
+    estado: document.getElementById("upd-estado").value,
+    cep: document.getElementById("upd-cep").value,
+    modelo: document.getElementById("upd-modelo").value,
+    cor: document.getElementById("upd-cor").value,
+    placa: document.getElementById("upd-placa").value,
+  };
 
-    const resultado = await window.pywebview.api.atualizar_morador(dados)
-    alert(resultado)
+  const resultado = await window.pywebview.api.atualizar_morador(dados);
+  alert(resultado);
 
-    btnSalvar.disabled = false
-    btnSalvar.textContent = 'Salvar'
-    fecharModalAtualizar()
-    linhaSelecionada = null
-    idSelecionado = null
-    carregarVeiculos()
+  btnSalvar.disabled = false;
+  btnSalvar.textContent = "Salvar";
+  fecharModalAtualizar();
+  linhaSelecionada = null;
+  idSelecionado = null;
+  carregarVeiculos();
+}
+
+function limparModalAdicionar() {
+  document.getElementById("add-nome").value = "";
+  document.getElementById("add-cpf").value = "";
+  document.getElementById("add-data").value = "";
+  document.getElementById("add-sexo").value = "";
+  document.getElementById("add-celular").value = "";
+  document.getElementById("add-email").value = "";
+  document.getElementById("add-cep").value = "";
+  document.getElementById("add-numero").value = "";
+  document.getElementById("add-rua").value = "";
+  document.getElementById("add-bairro").value = "";
+  document.getElementById("add-cidade").value = "";
+  document.getElementById("add-estado").value = "";
+  document.getElementById("add-modelo").value = "";
+  document.getElementById("add-cor").value = "";
+  document.getElementById("add-placa").value = "";
 }
