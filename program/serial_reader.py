@@ -13,7 +13,7 @@ class SerialReader:
     def __init__(self):
         self.serial_conn = None
         self.__on_frame = None
-        self.status = "🚫"
+        self.status = "Sem Conexão"
         self.last_frame = None
         self._text_buffer = b''
         self._reading_image = False
@@ -32,7 +32,7 @@ class SerialReader:
         except Exception as e:
             print(f"SerialReader connect erro: {e}")
             self.serial_conn = None
-            self.status = "🚫"
+            self.status = "Sem Conexão"
             return False
 
     def get_status(self):
