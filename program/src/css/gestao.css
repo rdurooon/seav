@@ -70,6 +70,64 @@
   cursor: pointer;
 }
 
+.tabela-wrapper {
+  flex: 1;
+  border: 2px solid var(--cor-borda);
+  border-radius: 12px;
+  overflow-y: auto;
+}
+
+.tabela-wrapper table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  height: auto;
+}
+
 .tabela-wrapper tr {
+  height: 40px;
+  max-height: 40px;
+}
+
+.tabela-wrapper td,
+.tabela-wrapper th {
+  padding: 8px 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tabela-wrapper tbody tr td:empty {
+  border-color: transparent;
+}
+
+.linha-selecionada {
+  background-color: #d0e8ff !important;
   cursor: pointer;
+}
+
+.gestao-pesquisa {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.gestao-pesquisa input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 8px;
+  font-family: var(--fonte);
+  font-size: 0.9rem;
+  color: var(--cor-texto);
+}
+
+.gestao-pesquisa select {
+  padding: 8px 12px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 8px;
+  font-family: var(--fonte);
+  font-size: 0.9rem;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
 }
