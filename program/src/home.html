@@ -56,7 +56,13 @@
               font-size: 0.9rem;
             "
           />
-          <button id="btn-autodetectar" onclick="autodetectarPorta()" style="font-size: 0.8rem; padding: 6px 10px;">Autodetectar</button>
+          <button
+            id="btn-autodetectar"
+            onclick="autodetectarPorta()"
+            style="font-size: 0.8rem; padding: 6px 10px"
+          >
+            Autodetectar
+          </button>
         </div>
         <div class="modal-rodape">
           <button class="btn-cancelar" onclick="fecharConfig()">
@@ -152,10 +158,10 @@
           <div class="modal-secao">Endereço</div>
           <input id="upd-cep" placeholder="CEP (00000-000)" maxlength="9" />
           <input id="upd-numero" placeholder="Número" />
-          <input id="upd-rua" placeholder="Rua" readonly />
-          <input id="upd-bairro" placeholder="Bairro" readonly />
-          <input id="upd-cidade" placeholder="Cidade" readonly />
-          <input id="upd-estado" placeholder="UF" readonly />
+          <input id="upd-rua" placeholder="Rua" />
+          <input id="upd-bairro" placeholder="Bairro" />
+          <input id="upd-cidade" placeholder="Cidade" />
+          <input id="upd-estado" placeholder="UF" />
 
           <div class="modal-secao">Veículo</div>
           <input id="upd-modelo" placeholder="Modelo" />
@@ -167,6 +173,57 @@
             Cancelar
           </button>
           <button onclick="salvarAtualizar()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL REMOVER -->
+    <div id="modal-remover" class="modal-overlay">
+      <div class="modal-box" style="width: 400px; text-align: center">
+        <h2 class="modal-titulo">Remover Morador</h2>
+        <p style="font-size: 0.95rem; color: #1e2d3d" id="msg-remover"></p>
+        <div class="modal-rodape" style="justify-content: center">
+          <button class="btn-cancelar" onclick="fecharModalRemover()">
+            Cancelar
+          </button>
+          <button style="background: #e74c3c" onclick="confirmarRemover()">
+            Remover
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL BUSCA -->
+    <div id="modal-busca" class="modal-overlay">
+      <div class="modal-box" style="width: 500px">
+        <h2 class="modal-titulo" id="modal-busca-titulo">Buscar Morador</h2>
+        <input
+          type="text"
+          id="campo-busca-modal"
+          placeholder="Digite nome, CPF ou placa..."
+          style="
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--cor-borda);
+            border-radius: 8px;
+            font-family: var(--fonte);
+            font-size: 0.9rem;
+          "
+        />
+        <div
+          id="resultados-busca"
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+          "
+        ></div>
+        <div class="modal-rodape">
+          <button class="btn-cancelar" onclick="fecharModalBusca()">
+            Cancelar
+          </button>
         </div>
       </div>
     </div>

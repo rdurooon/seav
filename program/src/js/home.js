@@ -1,25 +1,25 @@
 async function navegarPara(pagina) {
-    const resposta = await fetch(`pages/${pagina}.html`)
-    const html = await resposta.text()
-    document.getElementById('content').innerHTML = html
+  const resposta = await fetch(`pages/${pagina}.html`);
+  const html = await resposta.text();
+  document.getElementById("content").innerHTML = html;
 
-    const btnVoltar = document.getElementById('btn-voltar')
-    btnVoltar.style.display = pagina === 'menu' ? 'none' : 'block'
+  const btnVoltar = document.getElementById("btn-voltar");
+  btnVoltar.style.display = pagina === "menu" ? "none" : "block";
 
-    iniciarRelogio()
-    atualizarStatus()
+  iniciarRelogio();
+  atualizarStatus();
 
-    const paginasComJS = ['gestao', 'monitoramento', 'historico']
-    
-    if (paginasComJS.includes(pagina)) {
-        const script = document.createElement('script')
-        script.src = `js/${pagina}.js`
-        document.body.appendChild(script)
+  const paginasComJS = ["gestao", "monitoramento", "historico"];
 
-        if (pagina === 'gestao') {
-            script.onload = () => carregarVeiculos()
-        }
+  if (paginasComJS.includes(pagina)) {
+    const script = document.createElement("script");
+    script.src = `js/${pagina}.js`;
+    document.body.appendChild(script);
+
+    if (pagina === "gestao") {
+      script.onload = () => carregarVeiculos();
     }
+  }
 }
 
 function iniciarRelogio() {
@@ -52,7 +52,7 @@ function fecharInfo() {
 }
 
 function abrirConfig() {
-  pywebview.api.carregar_porta().then(porta => {
+  pywebview.api.carregar_porta().then((porta) => {
     if (porta) {
       document.getElementById("porta-com").value = porta;
     }
@@ -71,10 +71,10 @@ async function autodetectarPorta() {
       alert("Nenhuma porta serial detectada!");
       return;
     }
-    
+
     // Para simplificar, assume que a primeira porta é a do ESP32
     // Em uma implementação mais avançada, poderia verificar qual é a correta
-    const portaDetectada = portas[0].replace('COM', '');
+    const portaDetectada = portas[0].replace("COM", "");
     document.getElementById("porta-com").value = portaDetectada;
     alert(`Porta detectada: COM${portaDetectada}`);
   } catch (error) {
@@ -89,7 +89,7 @@ function salvarConfig() {
     return;
   }
   // Conectar à porta
-  pywebview.api.conectar_porta(porta).then(result => {
+  pywebview.api.conectar_porta(porta).then((result) => {
     if (result === "Conectado") {
       alert(`Porta COM${porta} conectada e salva!`);
       fecharConfig();
@@ -101,11 +101,19 @@ function salvarConfig() {
 
 // Atualizar status do sistema
 function atualizarStatus() {
-  pywebview.api.get_status().then(status => {
-    const el = document.getElementById('status-sistema');
+  pywebview.api.get_status().then((status) => {
+    const el = document.getElementById("status-sistema");
     if (el) el.textContent = `Status do sistema: ${status}`;
   });
 }
 
 // Atualizar a cada 2 segundos
 setInterval(atualizarStatus, 2000);
+
+function abrirModal(id) {
+  document.getElementById(id).classList.add("ativo");
+}
+
+function fecharModal(id) {
+  document.getElementById(id).classList.remove("ativo");
+}
