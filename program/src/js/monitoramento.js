@@ -1,5 +1,6 @@
 const CAMERA_TIMEOUT_MS = 5000;
 let cameraTimeoutId = null;
+let lastFrameBase64 = null;
 
 // Atualizar status do sistema
 function atualizarStatus() {
@@ -14,15 +15,28 @@ function setCameraPlaceholder(visible) {
   placeholder.classList.toggle('hidden', !visible);
 }
 
+function setBackgroundImage(base64Data) {
+  const stream = document.getElementById('camera-stream');
+  if (!stream) return;
+  if (base64Data) {
+    stream.style.backgroundImage = `url('${base64Data}')`;
+    stream.style.backgroundSize = 'cover';
+    stream.style.backgroundPosition = 'center';
+    stream.src = '';
+  } else {
+    stream.style.backgroundImage = 'none';
+    stream.src = '';
+  }
+}
+
 function resetCameraTimeout() {
   if (cameraTimeoutId) {
     clearTimeout(cameraTimeoutId);
   }
   cameraTimeoutId = setTimeout(() => {
     setCameraPlaceholder(true);
-    const stream = document.getElementById('camera-stream');
-    if (stream) {
-      stream.src = '';
+    if (lastFrameBase64) {
+      setBackgroundImage(lastFrameBase64);
     }
   }, CAMERA_TIMEOUT_MS);
 }
@@ -31,7 +45,9 @@ function resetCameraTimeout() {
 function updateCameraStream(base64Data) {
   const stream = document.getElementById('camera-stream');
   if (!stream) return;
+  lastFrameBase64 = base64Data;
   stream.src = base64Data;
+  stream.style.backgroundImage = 'none';
   setCameraPlaceholder(false);
   resetCameraTimeout();
 }

@@ -114,7 +114,7 @@ void setup() {
   config.pixel_format = PIXFORMAT_JPEG;
   config.grab_mode = CAMERA_GRAB_LATEST;
   config.fb_location = CAMERA_FB_IN_PSRAM;
-  config.jpeg_quality = 20; // Qualidade otimizada para OCR
+  config.jpeg_quality = 12; // Qualidade otimizada para OCR
   config.fb_count = 1;
   config.frame_size = FRAMESIZE_CIF;
 
@@ -122,8 +122,46 @@ void setup() {
   if (err != ESP_OK) ESP.restart();
 
   sensor_t * s = esp_camera_sensor_get();
-  s->set_gain_ctrl(s, 0);   
-  s->set_agc_gain(s, 5);    
+
+  // ===========================
+  // AJUSTES PARA OCR DE PLACAS
+  // ===========================
+
+  // Brilho (-2 a 2)
+  s->set_brightness(s, 2);
+
+  // Contraste (-2 a 2)
+  s->set_contrast(s, 2);
+
+  // Saturação (-2 a 2)
+  s->set_saturation(s, -1);
+
+  // Nitidez
+  s->set_sharpness(s, 2);
+
+  // Redução de ruído
+  s->set_denoise(s, 0);
+
+  // Controle automático de ganho
+  s->set_gain_ctrl(s, 1);
+
+  // Ganho manual máximo
+  s->set_agc_gain(s, 20);
+
+  // Exposição automática
+  s->set_exposure_ctrl(s, 1);
+
+  // Exposição mais forte
+  s->set_aec_value(s, 600);
+
+  // White balance automático
+  s->set_whitebal(s, 1);
+
+  // Correção de lente
+  s->set_lenc(s, 1);
+
+  // Melhor alcance de ganho
+  s->set_gainceiling(s, (gainceiling_t)6);
 }
 
 void loop() {

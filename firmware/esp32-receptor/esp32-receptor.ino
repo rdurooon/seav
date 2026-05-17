@@ -26,6 +26,11 @@ uint16_t current_frame_id = 0;
 uint16_t chunks_received = 0;
 bool cameraConectada = false;
 bool controladoraConectada = false;
+unsigned long lastCameraTime = 0;
+unsigned long lastControladoraTime = 0;
+unsigned long lastStatusCheck = 0;
+const unsigned long CONNECTION_TIMEOUT = 10000; // 10 segundos de timeout
+const unsigned long STATUS_INTERVAL = 2000; // Enviar status a cada 2 segundos
 
 void enviarLog(String mensagem) {
   Serial.print("LOG:"); 
@@ -35,8 +40,8 @@ void enviarLog(String mensagem) {
 
 void enviarStatus() {
   String statusMsg = "STATUS:";
-  if (!cameraConectada && !controladoraConectada) statusMsg += "❌";
-  else if (cameraConectada && controladoraConectada) statusMsg += "✅";
+  if (!cameraConectada && !controladoraConectada) statusMsg += "Escutando...";
+  else if (cameraConectada && controladoraConectada) statusMsg += "Pronto";
   else statusMsg += "1/2";
   Serial.println(statusMsg);
 }
@@ -62,7 +67,8 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
       Serial.flush(); 
       chunks_received = 0; current_frame_id = 0; 
     }
-    cameraConectada = true; // Se recebeu imagem, a câmera está viva
+    cameraConectada = true;
+    lastCameraTime = millis();
     enviarStatus();
     return;
   }
@@ -93,6 +99,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
     const char *reply = "ACK_CTRL";
     esp_now_send(info->src_addr, (uint8_t *)reply, strlen(reply) + 1);
     controladoraConectada = true;
+    lastControladoraTime = millis();
     enviarStatus();
   }
   
@@ -109,6 +116,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
     const char *reply = "ACK_CAM";
     esp_now_send(info->src_addr, (uint8_t *)reply, strlen(reply) + 1);
     cameraConectada = true;
+    lastCameraTime = millis();
     enviarStatus();
   }
 }
@@ -138,7 +146,7 @@ void setup() {
 
   if (pref.getBytes("macCtrl", macControladora, 6) > 0) {
     ctrlPareada = true;
-    controladoraConectada = true;
+    // Não marca como conectada automaticamente - aguarda resposta real
     esp_now_peer_info_t peer = {};
     memcpy(peer.peer_addr, macControladora, 6);
     peer.channel = 1; peer.encrypt = false; peer.ifidx = WIFI_IF_STA;
@@ -147,14 +155,29 @@ void setup() {
   }
   
   enviarLog("Receptor Online no Canal 1");
+  lastStatusCheck = millis();
+  lastCameraTime = millis();
+  lastControladoraTime = millis();
   enviarStatus();
 }
 
 void loop() {
-  // Loop de status simplificado
-  static unsigned long lastStatus = 0;
-  if (millis() - lastStatus > 5000) {
-    lastStatus = millis();
+  // Verificar status periodicamente
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastStatusCheck > STATUS_INTERVAL) {
+    lastStatusCheck = currentTime;
+    
+    // Verificar timeout de conexão
+    if (cameraConectada && (currentTime - lastCameraTime) > CONNECTION_TIMEOUT) {
+      cameraConectada = false;
+      enviarLog("Camera desconectada (timeout)");
+    }
+    if (controladoraConectada && (currentTime - lastControladoraTime) > CONNECTION_TIMEOUT) {
+      controladoraConectada = false;
+      enviarLog("Controladora desconectada (timeout)");
+    }
+    
     enviarStatus();
   }
 

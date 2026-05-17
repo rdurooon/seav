@@ -88,15 +88,9 @@ function salvarConfig() {
     alert("Digite uma porta válida entre 1 e 9!");
     return;
   }
-  // Conectar à porta
-  pywebview.api.conectar_porta(porta).then((result) => {
-    if (result === "Conectado") {
-      alert(`Porta COM${porta} conectada e salva!`);
-      fecharConfig();
-    } else {
-      alert("Erro ao conectar à porta!");
-    }
-  });
+  // Conectar à porta silenciosamente
+  pywebview.api.conectar_porta_silencioso(porta);
+  fecharConfig();
 }
 
 // Atualizar status do sistema
