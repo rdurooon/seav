@@ -7,6 +7,17 @@ class API:
         self.db = Api()
         self.serial_reader = SerialReader()
         self.window = None
+        # Tentar conectar à porta salva automaticamente
+        self._conectar_porta_salva_auto()
+    
+    def _conectar_porta_salva_auto(self):
+        """Tenta conectar à porta salva no banco de dados automaticamente"""
+        try:
+            porta = self.db.carregar_config("porta_com")
+            if porta:
+                self.connect_serial(f"COM{porta}")
+        except Exception:
+            pass  # Silenciosamente - o status será atualizado no frontend
 
     def set_window(self, window):
         self.__window = window
@@ -24,6 +35,12 @@ class API:
             self.db.salvar_config("porta_com", porta)
             return "Conectado"
         return "Erro"
+
+    def conectar_porta_silencioso(self, porta):
+        """Tenta conectar à porta sem retornar erro ou feedback"""
+        if porta:
+            self.connect_serial(f"COM{porta}")
+            self.db.salvar_config("porta_com", porta)
 
     def carregar_porta(self):
         return self.db.carregar_config("porta_com")

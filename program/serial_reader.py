@@ -1,4 +1,5 @@
 ﻿import serial
+import serial.tools.list_ports
 import threading
 import time
 import base64
@@ -18,21 +19,53 @@ class SerialReader:
         self._text_buffer = b''
         self._reading_image = False
         self._image_buffer = b''
+        self._last_error_time = 0
+        self._error_cooldown = 5  # 5 segundos de cooldown entre logs de erro
+        self._last_error = None
+        self._connected = False
+        self._last_port = None  # Armazena a última porta conectada
+        self._desired_port = None  # Porta que queremos conectar / reconectar
+        self._last_reconnect_attempt = 0  # Timestamp da última tentativa de reconexão
+        self._reconnect_interval = 5  # Tentar reconectar a cada 5 segundos
         self._thread = threading.Thread(target=self._read_loop, daemon=True)
         self._thread.start()
 
     def connect(self, port):
+        self._desired_port = port
+        if self.serial_conn and self.serial_conn.is_open:
+            try:
+                if self.serial_conn.port == port and self._connected:
+                    return True
+            except Exception:
+                pass
+            try:
+                self.serial_conn.close()
+            except Exception:
+                pass
+            self.serial_conn = None
+            self._connected = False
+
         try:
             self.serial_conn = serial.Serial(port, 921600, timeout=0.1)
-            self.status = "❌"
             self._text_buffer = b''
             self._reading_image = False
             self._image_buffer = b''
+            self._connected = True
+            self._last_port = port  # Guardar a porta para reconexão automática
+            # Não alterar o status aqui - aguardar que o ESP32 envie o status real
             return True
         except Exception as e:
             print(f"SerialReader connect erro: {e}")
             self.serial_conn = None
             self.status = "Sem Conexão"
+            self._connected = False
+            self._last_port = port  # Ainda guardar a porta para tentativas futuras
+            return False
+
+    def _is_port_available(self, port):
+        try:
+            return any(p.device == port for p in serial.tools.list_ports.comports())
+        except Exception:
             return False
 
     def get_status(self):
@@ -43,14 +76,65 @@ class SerialReader:
 
     def _read_loop(self):
         while True:
-            if self.serial_conn and self.serial_conn.is_open:
+            # Verificar defensivamente se _connected existe
+            if not hasattr(self, '_connected'):
+                self._connected = False
+            
+            if self._connected and self.serial_conn:
                 try:
+                    # Verificar se a porta está realmente aberta
+                    if not self.serial_conn.is_open:
+                        self._handle_disconnection("Porta fechada")
+                        continue
+                    
                     data = self.serial_conn.read(4096)
                     if data:
                         self._process_new_data(data)
+                except (OSError, PermissionError, serial.SerialException) as e:
+                    # Estes erros indicam que a porta foi desconectada fisicamente
+                    self._handle_disconnection(f"Erro de porta: {e}")
                 except Exception as e:
-                    print(f"SerialReader erro: {e}")
+                    # Evitar spam de erros com cooldown
+                    current_time = time.time()
+                    error_str = str(e)
+                    
+                    if error_str != self._last_error or (current_time - self._last_error_time) >= self._error_cooldown:
+                        print(f"SerialReader erro: {e}")
+                        self._last_error = error_str
+                        self._last_error_time = current_time
+            else:
+                # Se desconectado mas tem uma porta salva, tentar reconectar periodicamente
+                if not self._connected and self._last_port:
+                    current_time = time.time()
+                    if (current_time - self._last_reconnect_attempt) >= self._reconnect_interval:
+                        self._last_reconnect_attempt = current_time
+                        if self._is_port_available(self._last_port):
+                            try:
+                                # Tentar reconectar silenciosamente somente se a porta reaparecer
+                                self.connect(self._last_port)
+                            except Exception:
+                                pass
+                        else:
+                            # Aguardando a porta reaparecer
+                            self.status = "Sem Conexão"
+            
             time.sleep(0.01)
+    
+    def _handle_disconnection(self, reason):
+        """Trata desconexão da porta serial"""
+        self._connected = False
+        self.status = "Sem Conexão"
+        
+        if self.serial_conn:
+            try:
+                self.serial_conn.close()
+            except:
+                pass
+        
+        self.serial_conn = None
+        self._text_buffer = b''
+        self._reading_image = False
+        self._image_buffer = b''
 
     def _process_new_data(self, data):
         data = self._text_buffer + data
