@@ -114,9 +114,9 @@ void setup() {
   config.pixel_format = PIXFORMAT_JPEG;
   config.grab_mode = CAMERA_GRAB_LATEST;
   config.fb_location = CAMERA_FB_IN_PSRAM;
-  config.jpeg_quality = 12; // Qualidade otimizada para OCR
+  config.jpeg_quality = 12; // Qualidade otimizada para OCR e imagem geral
   config.fb_count = 1;
-  config.frame_size = FRAMESIZE_CIF;
+  config.frame_size = FRAMESIZE_VGA;
 
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) ESP.restart();
@@ -127,41 +127,43 @@ void setup() {
   // AJUSTES PARA OCR DE PLACAS
   // ===========================
 
-  // Brilho (-2 a 2)
+  // Fix de orientação de montagem da câmera
+  // Apenas inverte verticalmente para evitar letras espelhadas de forma errada
+  s->set_vflip(s, 1);
+  s->set_hmirror(s, 0);
+
+  // Brilho máximo razoável para baixa luminosidade
   s->set_brightness(s, 2);
+-
+  // Contraste moderado para melhor legibilidade
+  s->set_contrast(s, 1);
 
-  // Contraste (-2 a 2)
-  s->set_contrast(s, 2);
+  // Saturação neutra para cores mais naturais
+  s->set_saturation(s, 0);
 
-  // Saturação (-2 a 2)
-  s->set_saturation(s, -1);
+  // Nitidez leve para manter detalhes de placa sem excessos
+  s->set_sharpness(s, 1);
 
-  // Nitidez
-  s->set_sharpness(s, 2);
+  // Redução de ruído moderada
+  s->set_denoise(s, 1);
 
-  // Redução de ruído
-  s->set_denoise(s, 0);
-
-  // Controle automático de ganho
+  // Controle automático de ganho ligado
   s->set_gain_ctrl(s, 1);
 
-  // Ganho manual máximo
-  s->set_agc_gain(s, 20);
+  // Ganho automático máximo maior para baixa luz
+  s->set_gainceiling(s, (gainceiling_t)8);
 
   // Exposição automática
   s->set_exposure_ctrl(s, 1);
 
-  // Exposição mais forte
-  s->set_aec_value(s, 600);
+  // Valor de AEC um pouco mais alto para imagens menos escuras
+  s->set_aec_value(s, 800);
 
   // White balance automático
   s->set_whitebal(s, 1);
 
   // Correção de lente
   s->set_lenc(s, 1);
-
-  // Melhor alcance de ganho
-  s->set_gainceiling(s, (gainceiling_t)6);
 }
 
 void loop() {

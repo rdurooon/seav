@@ -38,7 +38,7 @@
     <div id="modal-config" class="modal-overlay">
       <div class="modal-box" style="width: 400px">
         <h2 class="modal-titulo">Configurações</h2>
-        <div style="display: flex; align-items: center; gap: 10px">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
           <label style="font-size: 0.9rem; font-weight: 600"
             >Porta do receptor: COM</label
           >
@@ -63,12 +63,35 @@
           >
             Autodetectar
           </button>
+          <div style="display:flex; align-items:center; gap:8px; margin-left:12px;">
+            <label for="suppress-errors-toggle" style="font-size:0.9rem;">Suprimir erros no terminal</label>
+            <input type="checkbox" id="suppress-errors-toggle" />
+          </div>
+        </div>
+        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button onclick="abrirModalAjuste()" style="font-size: 0.85rem; padding: 8px 12px">
+            Ajustar reconhecimento
+          </button>
         </div>
         <div class="modal-rodape">
           <button class="btn-cancelar" onclick="fecharConfig()">
             Cancelar
           </button>
           <button onclick="salvarConfig()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-ajuste" style="display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.35); z-index:150; align-items:center; justify-content:center;">
+      <div style="width:80%; max-width:900px; background:#ffffff; padding:16px; border-radius:16px; position:relative; color:#102a43; box-shadow:0 20px 45px rgba(0,0,0,0.18);">
+        <button id="modal-close" style="position:absolute; right:12px; top:12px; background:transparent; border:none; color:#0b4ed0; font-size:24px; font-weight:700; z-index:1000; cursor:pointer;">✕</button>
+        <div style="position:relative; width:100%; height:480px; background:#f7fbff; border-radius:12px; overflow:hidden;">
+          <img id="camera-stream-modal" src="" alt="Camera Stream Modal" style="width:100%; height:100%; object-fit:cover; display:block;" />
+          <canvas id="camera-canvas-modal" style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:auto; z-index:5;"></canvas>
+        </div>
+        <div id="ocr-results" style="text-align:center; margin-top:12px; color:#0b4ed0; font-size:18px;">
+          <div id="ocr-text" style="font-weight:700;">Nenhum resultado</div>
+          <div id="ocr-meta" style="font-size:14px; color:#334e68;"></div>
         </div>
       </div>
     </div>

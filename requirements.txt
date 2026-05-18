@@ -4,3 +4,7 @@ mysql-connector-python
 screeninfo
 pyserial
 Pillow
+opencv-python
+easyocr
+torch
+torchvision
