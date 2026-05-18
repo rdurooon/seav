@@ -52,6 +52,261 @@ function updateCameraStream(base64Data) {
   resetCameraTimeout();
 }
 
+// Atualiza também o stream do modal (se aberto)
+function _updateModalStream(base64Data) {
+  const stream = document.getElementById('camera-stream-modal');
+  if (!stream) return;
+  stream.src = base64Data;
+}
+
+// alterar updateCameraStream para também atualizar modal
+const _origUpdateCameraStream = updateCameraStream;
+updateCameraStream = function(base64Data, recognitionBase64 = null) {
+  _origUpdateCameraStream(base64Data, recognitionBase64);
+  try { _updateModalStream(recognitionBase64 || base64Data); } catch (e) {}
+};
+
+// --- Modal Ajuste ---
+function abrirModalAjuste() {
+  fecharConfig();
+  const modal = document.getElementById('modal-ajuste');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  // configurar canvas modal
+  setupModalCanvas();
+}
+
+function fecharModalAjuste() {
+  const modal = document.getElementById('modal-ajuste');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'modal-close') {
+    fecharModalAjuste();
+  }
+});
+
+function setupModalCanvas() {
+  const img = document.getElementById('camera-stream-modal');
+  const canvas = document.getElementById('camera-canvas-modal');
+  if (!img || !canvas) return;
+
+  function resizeCanvas() {
+    canvas.width = img.clientWidth;
+    canvas.height = img.clientHeight;
+    canvas.style.left = img.offsetLeft + 'px';
+    canvas.style.top = img.offsetTop + 'px';
+    drawROIOnCanvas(canvas, 'rgba(255, 0, 0, 0.9)', 2);
+  }
+
+  let drawing = false;
+  let startX = 0;
+  let startY = 0;
+
+  if (img.complete) {
+    resizeCanvas();
+  }
+
+  img.addEventListener('load', () => {
+    resizeCanvas();
+  });
+
+  window.addEventListener('resize', resizeCanvas);
+
+  canvas.onmousedown = (e) => {
+    drawing = true;
+    startX = e.offsetX;
+    startY = e.offsetY;
+  };
+
+  canvas.onmousemove = (e) => {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawROIOnCanvas(canvas, 'rgba(255, 0, 0, 0.9)', 2);
+    if (!drawing) return;
+    const x = Math.min(startX, e.offsetX);
+    const y = Math.min(startY, e.offsetY);
+    const w = Math.abs(e.offsetX - startX);
+    const h = Math.abs(e.offsetY - startY);
+    ctx.strokeStyle = 'rgba(255,165,0,0.9)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+  };
+
+  canvas.onmouseup = (e) => {
+    drawing = false;
+    const endX = e.offsetX;
+    const endY = e.offsetY;
+    const x = Math.min(startX, endX);
+    const y = Math.min(startY, endY);
+    const w = Math.abs(endX - startX);
+    const h = Math.abs(endY - startY);
+
+    const naturalW = img.naturalWidth || img.width;
+    const naturalH = img.naturalHeight || img.height;
+    const dispW = img.clientWidth;
+    const dispH = img.clientHeight;
+    const scaleX = naturalW / (dispW || naturalW);
+    const scaleY = naturalH / (dispH || naturalH);
+
+    const rx = Math.round(x * scaleX);
+    const ry = Math.round(y * scaleY);
+    const rw = Math.round(w * scaleX);
+    const rh = Math.round(h * scaleY);
+
+    try {
+      pywebview.api.set_roi(rx, ry, rw, rh);
+      updateLocalROI(rx, ry, rw, rh);
+    } catch (e) {
+      console.warn('set_roi failed', e);
+    }
+  };
+
+  canvas.ondblclick = () => {
+    clearLocalROI();
+  };
+}
+
+// Recebe atualizações rápidas de OCR para exibição no modal
+function onOcrUpdate(dados) {
+  try {
+    const obj = typeof dados === 'string' ? JSON.parse(dados) : dados;
+    const text = obj.texto || '';
+    const conf = obj.confianca || 0;
+    const pad = obj.padrao || '';
+    const textEl = document.getElementById('ocr-text');
+    const metaEl = document.getElementById('ocr-meta');
+    if (textEl) {
+      textEl.textContent = text
+        ? `Placa: ${text} | Modelo: ${pad} | Confiança: ${conf.toFixed ? conf.toFixed(2) : conf}`
+        : 'Nenhum resultado';
+    }
+    if (metaEl) metaEl.textContent = '';
+  } catch (e) { console.warn('onOcrUpdate error', e); }
+}
+
+// --- ROI canvas handling ---
+function setupROICanvas() {
+  const img = document.getElementById('camera-stream');
+  const canvas = document.getElementById('camera-canvas');
+  if (!img || !canvas) return;
+
+  function resizeCanvas() {
+    canvas.width = img.clientWidth;
+    canvas.height = img.clientHeight;
+    canvas.style.left = img.offsetLeft + 'px';
+    canvas.style.top = img.offsetTop + 'px';
+    drawROIOnCanvas(canvas, 'rgba(180,180,180,0.9)', 1);
+  }
+
+  let drawing = false;
+  let startX = 0;
+  let startY = 0;
+
+  if (img.complete) {
+    resizeCanvas();
+  }
+
+  img.addEventListener('load', () => {
+    resizeCanvas();
+  });
+
+  window.addEventListener('resize', resizeCanvas);
+
+  canvas.addEventListener('mousedown', (e) => {
+    drawing = true;
+    startX = e.offsetX;
+    startY = e.offsetY;
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawROIOnCanvas(canvas, 'rgba(180,180,180,0.9)', 1);
+    if (!drawing) return;
+    const x = Math.min(startX, e.offsetX);
+    const y = Math.min(startY, e.offsetY);
+    const w = Math.abs(e.offsetX - startX);
+    const h = Math.abs(e.offsetY - startY);
+    ctx.strokeStyle = 'rgba(255,165,0,0.9)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+  });
+
+  canvas.addEventListener('mouseup', (e) => {
+    drawing = false;
+    const endX = e.offsetX;
+    const endY = e.offsetY;
+    const x = Math.min(startX, endX);
+    const y = Math.min(startY, endY);
+    const w = Math.abs(endX - startX);
+    const h = Math.abs(endY - startY);
+
+    const naturalW = img.naturalWidth || img.width;
+    const naturalH = img.naturalHeight || img.height;
+    const dispW = img.clientWidth;
+    const dispH = img.clientHeight;
+    const scaleX = naturalW / (dispW || naturalW);
+    const scaleY = naturalH / (dispH || naturalH);
+
+    const rx = Math.round(x * scaleX);
+    const ry = Math.round(y * scaleY);
+    const rw = Math.round(w * scaleX);
+    const rh = Math.round(h * scaleY);
+
+    try {
+      pywebview.api.set_roi(rx, ry, rw, rh);
+      updateLocalROI(rx, ry, rw, rh);
+    } catch (e) {
+      console.warn('set_roi failed', e);
+    }
+  });
+
+  canvas.addEventListener('dblclick', () => {
+    clearLocalROI();
+  });
+}
+
+// Executa setup do canvas
+setupROICanvas();
+
+// --- Placa detectada handler ---
+function onPlacaDetectada(dados) {
+  try {
+    const panel = document.getElementById('placa-panel');
+    if (!panel) return;
+    const obj = typeof dados === 'string' ? JSON.parse(dados) : dados;
+    const placa = obj.placa;
+    const autorizado = !!obj.autorizado;
+    let morador = obj.morador || null;
+
+    panel.style.display = 'block';
+    panel.innerHTML = `<strong>${placa}</strong><br>${autorizado ? 'Autorizado' : 'Não cadastrado'}`;
+
+    if (autorizado) {
+      // registrar acesso no backend
+      try {
+        const id_morador = morador && morador[0] ? morador[0] : null;
+        pywebview.api.registrar_acesso(placa, id_morador, true).then(res => {
+          // adicionar à tabela localmente
+          const tabela = document.getElementById('tabela-acessos');
+          const tr = document.createElement('tr');
+          const now = new Date().toLocaleString();
+          tr.innerHTML = `<td>${placa}</td><td>-</td><td>${morador ? morador[3] || '' : ''}</td><td>${now}</td>`;
+          tabela.insertBefore(tr, tabela.firstChild);
+        }).catch(()=>{});
+      } catch(e){}
+    }
+
+    // esconder painel após 6s
+    setTimeout(()=>{panel.style.display='none';}, 6000);
+  } catch (e) {
+    console.warn('onPlacaDetectada error', e);
+  }
+}
+
 // Inicializar
 setCameraPlaceholder(true);
 atualizarStatus();

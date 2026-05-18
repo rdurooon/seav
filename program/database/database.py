@@ -273,3 +273,60 @@ class Api:
         finally:
             cursor.close()
             conexao.close()
+
+    # ---------------- BUSCAR POR PLACA ----------------
+    def buscar_veiculo_por_placa(self, placa):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+
+        try:
+            cursor.execute("""
+                SELECT
+                    v.placa,
+                    v.id_morador,
+                    m.id_morador,
+                    m.nome,
+                    m.cpf
+                FROM veiculo v
+                LEFT JOIN moradores m ON v.id_morador = m.id_morador
+                WHERE v.placa = %s
+            """, (placa,))
+
+            return cursor.fetchone()
+
+        except Exception as e:
+            return None
+
+        finally:
+            cursor.close()
+            conexao.close()
+
+    # ---------------- REGISTRAR ACESSO ----------------
+    def registrar_acesso(self, placa, id_morador, autorizado):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS historico_acessos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    placa VARCHAR(20),
+                    id_morador INT NULL,
+                    autorizado TINYINT,
+                    data_hora DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cursor.execute("""
+                INSERT INTO historico_acessos (placa, id_morador, autorizado)
+                VALUES (%s, %s, %s)
+            """, (placa, id_morador, 1 if autorizado else 0))
+
+            conexao.commit()
+            return True
+        except Exception as e:
+            conexao.rollback()
+            return False
+        finally:
+            cursor.close()
+            conexao.close()

@@ -3,12 +3,24 @@ import serial.tools.list_ports
 import threading
 import time
 import base64
-import io
 
 try:
-    from PIL import Image
-except ImportError:
-    Image = None
+    from ai.alpr_engine import ALPREngine
+    import numpy as _np
+    import cv2 as _cv2
+except Exception as e:
+    print(f"[SerialReader] ALPR import failed: {e}")
+    ALPREngine = None
+    _np = None
+    _cv2 = None
+
+# Ajuste fino de orientação da câmera.
+# O firmware ESP32 já aplica a correção de orientação no sensor.
+# Caso o feed ainda apresente inversão, descomente o valor adequado abaixo.
+# -1 = flips both axes (rotate 180 degrees)
+#  0 = vertical flip (up/down)
+#  1 = horizontal flip (left/right)
+CAMERA_ORIENTATION_FIX = None
 
 class SerialReader:
     def __init__(self):
@@ -27,8 +39,28 @@ class SerialReader:
         self._desired_port = None  # Porta que queremos conectar / reconectar
         self._last_reconnect_attempt = 0  # Timestamp da última tentativa de reconexão
         self._reconnect_interval = 5  # Tentar reconectar a cada 5 segundos
+        # ALPR
+        self._alpr_error = None
+        try:
+            if ALPREngine is not None:
+                self._alpr = ALPREngine()
+            else:
+                self._alpr = None
+                self._alpr_error = "ALPR dependencies unavailable"
+        except Exception as e:
+            self._alpr = None
+            self._alpr_error = str(e)
+            print(f"[SerialReader] ALPREngine init failed: {e}")
+
         self._thread = threading.Thread(target=self._read_loop, daemon=True)
         self._thread.start()
+
+        self.__on_placa = None
+        self._ultimo_placa_enviada = None
+        self.__on_ocr = None
+        self._ultimo_ocr_sent = 0
+        self._last_ocr_text = None
+        self._suppress_errors = False
 
     def connect(self, port):
         self._desired_port = port
@@ -55,7 +87,8 @@ class SerialReader:
             # Não alterar o status aqui - aguardar que o ESP32 envie o status real
             return True
         except Exception as e:
-            print(f"SerialReader connect erro: {e}")
+            if not getattr(self, '_suppress_errors', False):
+                print(f"SerialReader connect erro: {e}")
             self.serial_conn = None
             self.status = "Sem Conexão"
             self._connected = False
@@ -73,6 +106,12 @@ class SerialReader:
 
     def set_frame_callback(self, callback):
         self.__on_frame = callback
+
+    def set_placa_callback(self, callback):
+        self.__on_placa = callback
+
+    def set_ocr_callback(self, callback):
+        self.__on_ocr = callback
 
     def _read_loop(self):
         while True:
@@ -185,16 +224,127 @@ class SerialReader:
         if not self.__on_frame:
             return
         try:
-            if Image is not None:
+            recognition_frame = None
+            display_frame = None
+            if _np is not None and _cv2 is not None:
                 try:
-                    image = Image.open(io.BytesIO(img_bytes))
-                    image = image.rotate(180, expand=True)
-                    output = io.BytesIO()
-                    image.save(output, format='JPEG')
-                    img_bytes = output.getvalue()
-                except Exception as image_error:
-                    print(f"Pillow failed to rotate image: {image_error}")
+                    arr = _np.frombuffer(img_bytes, _np.uint8)
+                    # suprimir mensagens de libjpeg durante decodificação quando configurado
+                    if getattr(self, '_suppress_errors', False):
+                        @contextmanager
+                        def _suppress_stderr():
+                            try:
+                                devnull = os.open(os.devnull, os.O_RDWR)
+                                save_fd = os.dup(2)
+                                os.dup2(devnull, 2)
+                                os.close(devnull)
+                                yield
+                            finally:
+                                try:
+                                    os.dup2(save_fd, 2)
+                                    os.close(save_fd)
+                                except Exception:
+                                    pass
+                        with _suppress_stderr():
+                            decoded = _cv2.imdecode(arr, _cv2.IMREAD_COLOR)
+                    else:
+                        decoded = _cv2.imdecode(arr, _cv2.IMREAD_COLOR)
+                    if decoded is not None and decoded.size != 0:
+                        # Ajuste de orientação: alguns módulos enviam a imagem virada e espelhada
+                        if CAMERA_ORIENTATION_FIX is None:
+                            recognition_frame = decoded
+                        else:
+                            recognition_frame = _cv2.flip(decoded, CAMERA_ORIENTATION_FIX)
+                        display_frame = _cv2.convertScaleAbs(recognition_frame, alpha=1.05, beta=10)
+                except Exception:
+                    recognition_frame = None
+                    display_frame = None
+
+            if recognition_frame is not None:
+                if self._alpr is not None:
+                    try:
+                        self._alpr.processar_frame(recognition_frame)
+                    except Exception:
+                        pass
+
+                try:
+                    resultado_ocr = None
+                    try:
+                        resultado_ocr = self._alpr.ocr_thread.obter() if self._alpr else None
+                    except Exception:
+                        resultado_ocr = None
+
+                    agora = time.time()
+                    texto = ''
+                    confi = 0.0
+                    padrao = ''
+                    ts = None
+
+                    if resultado_ocr:
+                        texto = getattr(resultado_ocr, 'texto', '') or ''
+                        confi = getattr(resultado_ocr, 'confianca', 0.0) or 0.0
+                        padrao = getattr(resultado_ocr, 'padrao', '') or ''
+                        ts = getattr(resultado_ocr, 'timestamp', None)
+
+                    if self.__on_ocr and (texto != self._last_ocr_text or (agora - self._ultimo_ocr_sent) > 0.25):
+                        self._last_ocr_text = texto
+                        self._ultimo_ocr_sent = agora
+                        try:
+                            self.__on_ocr({
+                                'texto': texto,
+                                'confianca': confi,
+                                'padrao': padrao,
+                                'timestamp': ts
+                            })
+                        except Exception:
+                            pass
+
+                    # Remover sobreposição de texto OCR no stream (monitoramento limpa)
+
+                    placa = self._alpr.obter_placa() if self._alpr else None
+                    if placa and self._alpr.tracker.locked:
+                        texto = placa.texto
+                        if texto != self._ultimo_placa_enviada:
+                            self._ultimo_placa_enviada = texto
+                            if self.__on_placa:
+                                try:
+                                    self.__on_placa(texto)
+                                except Exception:
+                                    pass
+                    if self._alpr is not None and display_frame is not None:
+                        try:
+                            bbox = self._alpr.tracker.bbox
+                            if bbox:
+                                x, y, w, h = bbox
+                                # Desenha apenas o retângulo indicando onde o tracker está vendo a placa
+                                _cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                # Mostrar texto LOCK apenas quando estiver bloqueado
+                                if self._alpr.tracker.locked:
+                                    try:
+                                        _cv2.putText(display_frame, 'LOCKED', (x, max(22, y - 10)), _cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, _cv2.LINE_AA)
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+            if display_frame is not None and _cv2 is not None:
+                try:
+                    _, encoded_display = _cv2.imencode('.jpg', display_frame)
+                    _, encoded_recognition = _cv2.imencode('.jpg', recognition_frame) if recognition_frame is not None else (None, None)
+                    if encoded_display is not None:
+                        b64_display = base64.b64encode(encoded_display.tobytes()).decode('utf-8')
+                        b64_recognition = None
+                        if encoded_recognition is not None:
+                            b64_recognition = base64.b64encode(encoded_recognition.tobytes()).decode('utf-8')
+                        self.__on_frame(b64_display, b64_recognition)
+                        return
+                except Exception:
+                    pass
+
             b64 = base64.b64encode(img_bytes).decode('utf-8')
-            self.__on_frame(b64)
+            self.__on_frame(b64, None)
         except Exception as e:
-            print(f"Erro ao atualizar camera: {e}")
+            if not getattr(self, '_suppress_errors', False):
+                print(f"Erro ao atualizar camera: {e}")
