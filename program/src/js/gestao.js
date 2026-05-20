@@ -26,16 +26,27 @@ function renderizarTabela(dados) {
     return `<td>${valor}</td>`;
   }
 
+  function formatarPlaca(placa) {
+    if (!placa) return null;
+    return placa.replace(/-/g, "").toUpperCase();
+  }
+
+  function formatarCor(cor) {
+    if (!cor) return null;
+    return cor.charAt(0).toUpperCase() + cor.slice(1).toLowerCase();
+  }
+
   dados.forEach((linha) => {
     const [id, nome, cpf, modelo, cor, placa] = linha;
     const tr = document.createElement("tr");
     tr.innerHTML = `
-            ${celula(placa)}
+            ${celula(formatarPlaca(placa))}
             ${celula(modelo)}
             ${celula(nome)}
-            ${celula(cor)}
+            ${celula(formatarCor(cor))}
         `;
     tr.onclick = () => selecionarLinha(tr, id);
+    tr.ondblclick = () => abrirInfoCadastrado(id);
     tbody.appendChild(tr);
   });
 
@@ -51,22 +62,35 @@ function renderizarTabela(dados) {
 // PESQUISA
 // ═══════════════════════════════════════
 function detectarFiltro(termo) {
-  if (/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/.test(termo) || /^\d{3}\./.test(termo))
-    return "cpf";
-  if (/^[a-zA-Z]{3}\d/.test(termo) || /^[a-zA-Z]{3}[0-9][a-zA-Z]/.test(termo))
-    return "placa";
+  // se tem só números, é CPF
+  if (/^\d+$/.test(termo)) return "cpf";
+  // se tem pontos ou traço, é CPF
+  if (/[\.\-]/.test(termo) && /\d/.test(termo)) return "cpf";
+  // se tem letras e números misturados, é placa
+  if (/[a-zA-Z]/.test(termo) && /\d/.test(termo)) return "placa";
+  // se tem só letras, pode ser placa ou nome
+  if (/^[a-zA-Z]{1,3}$/.test(termo)) return "placa";
   return "nome";
 }
 
 function pesquisar() {
   const termo = document.getElementById("campo-pesquisa").value.toLowerCase();
+  if (!termo) {
+    renderizarTabela(cacheVeiculos);
+    return;
+  }
+
   const filtro = detectarFiltro(termo);
 
   const filtrado = cacheVeiculos.filter((linha) => {
     const [id, nome, cpf, modelo, cor, placa] = linha;
+    const cpfLimpo = cpf?.replace(/\D/g, "") || "";
+    const termoLimpo = termo.replace(/\D/g, "");
+    const placaLimpa = placa?.replace(/-/g, "").toLowerCase() || "";
+
+    if (filtro === "cpf") return cpfLimpo.includes(termoLimpo);
+    if (filtro === "placa") return placaLimpa.includes(termo.replace(/-/g, ""));
     if (filtro === "nome") return nome?.toLowerCase().includes(termo);
-    if (filtro === "cpf") return cpf?.toLowerCase().includes(termo);
-    if (filtro === "placa") return placa?.toLowerCase().includes(termo);
     return true;
   });
 
@@ -92,7 +116,8 @@ function selecionarLinha(tr, id) {
 // REMOVER
 // ═══════════════════════════════════════
 function remover() {
-  if (!idSelecionado) {
+  if (!linhaSelecionada) {
+    idSelecionado = null;
     abrirModalBusca("remover");
     return;
   }
@@ -198,7 +223,8 @@ async function salvarAdicionar() {
 // ATUALIZAR
 // ═══════════════════════════════════════
 async function atualizar() {
-  if (!idSelecionado) {
+  if (!linhaSelecionada) {
+    idSelecionado = null;
     abrirModalBusca("atualizar");
     return;
   }
@@ -439,6 +465,56 @@ function validarCPF(cpf) {
   resto = (soma * 10) % 11;
   if (resto === 10 || resto === 11) resto = 0;
   return resto === parseInt(cpf[10]);
+}
+
+async function abrirInfoCadastrado(id) {
+  const dados = await window.pywebview.api.buscar_morador(id);
+  const [
+    _,
+    nome,
+    cpf,
+    dataNasc,
+    sexo,
+    celular,
+    email,
+    rua,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    cep,
+    modelo,
+    cor,
+    placa,
+  ] = dados;
+
+  document.getElementById("info-nome").textContent = nome || "Sem informação";
+  document.getElementById("info-cpf").textContent = cpf || "Sem informação";
+  document.getElementById("info-data").textContent =
+    dataNasc || "Sem informação";
+  document.getElementById("info-sexo").textContent =
+    sexo === "M" ? "Masculino" : sexo === "F" ? "Feminino" : "Sem informação";
+  document.getElementById("info-celular").textContent =
+    celular || "Sem informação";
+  document.getElementById("info-email").textContent = email || "Sem informação";
+  document.getElementById("info-rua").textContent = rua || "Sem informação";
+  document.getElementById("info-numero").textContent =
+    numero || "Sem informação";
+  document.getElementById("info-bairro").textContent =
+    bairro || "Sem informação";
+  document.getElementById("info-cidade").textContent =
+    cidade || "Sem informação";
+  document.getElementById("info-estado").textContent =
+    estado || "Sem informação";
+  document.getElementById("info-cep").textContent = cep || "Sem informação";
+  document.getElementById("info-modelo").textContent =
+    modelo || "Sem informação";
+  document.getElementById("info-cor").textContent = cor || "Sem informação";
+  document.getElementById("info-placa").textContent = placa
+    ? placa.replace(/-/g, "").toUpperCase()
+    : "Sem informação";
+
+  abrirModal("modal-info-cadastrado");
 }
 
 // ═══════════════════════════════════════

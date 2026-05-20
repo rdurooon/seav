@@ -36,114 +36,69 @@
 
     <!-- MODAL CONFIG -->
     <div id="modal-config" class="modal-overlay">
-      <div class="modal-box" style="width: 400px">
+      <div class="modal-box" style="width: 450px">
         <h2 class="modal-titulo">Configurações</h2>
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
-          <label style="font-size: 0.9rem; font-weight: 600"
-            >Porta do receptor: COM</label
+
+        <!-- PORTA SERIAL -->
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <label style="font-size: 0.85rem; font-weight: 700; color: #1e2d3d"
+            >Porta do receptor</label
           >
-          <input
-            type="number"
-            id="porta-com"
-            min="1"
-            max="9"
-            placeholder="1~9"
-            style="
-              width: 60px;
-              padding: 6px 10px;
-              border: 1.5px solid var(--cor-borda);
-              border-radius: 6px;
-              font-size: 0.9rem;
-            "
-          />
-          <button
-            id="btn-autodetectar"
-            onclick="autodetectarPorta()"
-            style="font-size: 0.8rem; padding: 6px 10px"
-          >
-            Autodetectar
-          </button>
-          <div style="display:flex; align-items:center; gap:8px; margin-left:12px;">
-            <label for="suppress-errors-toggle" style="font-size:0.9rem;">Suprimir erros no terminal</label>
-            <input type="checkbox" id="suppress-errors-toggle" />
+          <div style="display: flex; gap: 10px; align-items: center">
+            <span style="font-size: 0.9rem">COM</span>
+            <input
+              type="number"
+              id="porta-com"
+              min="1"
+              max="99"
+              placeholder="Ex: 3"
+              style="
+                width: 70px;
+                padding: 6px 10px;
+                border: 1.5px solid var(--cor-borda);
+                border-radius: 6px;
+                font-size: 0.9rem;
+              "
+            />
+            <button
+              onclick="autodetectarPorta()"
+              style="font-size: 0.8rem; padding: 6px 12px"
+            >
+              Autodetectar
+            </button>
           </div>
         </div>
-        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
-          <button onclick="abrirModalAjuste()" style="font-size: 0.85rem; padding: 8px 12px">
-            Ajustar reconhecimento
-          </button>
+
+        <!-- DIVISOR -->
+        <hr style="border: none; border-top: 1px solid #e0e0e0" />
+
+        <!-- ERROS DO TERMINAL -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 0.9rem; font-weight: 700; color: #1e2d3d"
+              >Erros do terminal</span
+            >
+            <span style="font-size: 0.75rem; color: #888"
+              >Exibir erros no terminal do sistema</span
+            >
+          </div>
+          <label class="slider-toggle">
+            <input type="checkbox" id="suppress-errors-toggle" />
+            <span class="slider-thumb"></span>
+          </label>
         </div>
+
         <div class="modal-rodape">
           <button class="btn-cancelar" onclick="fecharConfig()">
             Cancelar
           </button>
           <button onclick="salvarConfig()">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="modal-ajuste" style="display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.35); z-index:150; align-items:center; justify-content:center;">
-      <div style="width:80%; max-width:900px; background:#ffffff; padding:16px; border-radius:16px; position:relative; color:#102a43; box-shadow:0 20px 45px rgba(0,0,0,0.18);">
-        <button id="modal-close" style="position:absolute; right:12px; top:12px; background:transparent; border:none; color:#0b4ed0; font-size:24px; font-weight:700; z-index:1000; cursor:pointer;">✕</button>
-        <div style="position:relative; width:100%; height:480px; background:#f7fbff; border-radius:12px; overflow:hidden;">
-          <img id="camera-stream-modal" src="" alt="Camera Stream Modal" style="width:100%; height:100%; object-fit:cover; display:block;" />
-          <canvas id="camera-canvas-modal" style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:auto; z-index:5;"></canvas>
-        </div>
-        <div id="ocr-results" style="text-align:center; margin-top:12px; color:#0b4ed0; font-size:18px;">
-          <div id="ocr-text" style="font-weight:700;">Nenhum resultado</div>
-          <div id="ocr-meta" style="font-size:14px; color:#334e68;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL ADICIONAR -->
-    <div id="modal-adicionar" class="modal-overlay">
-      <div
-        class="modal-box"
-        style="width: 600px; max-height: 80vh; overflow-y: auto"
-      >
-        <h2 class="modal-titulo">Adicionar</h2>
-        <div class="modal-grid">
-          <div class="modal-secao">Morador</div>
-          <input id="add-nome" placeholder="Nome completo" />
-          <input
-            id="add-cpf"
-            placeholder="CPF (000.000.000-00)"
-            maxlength="14"
-          />
-          <input id="add-data" type="date" />
-          <select id="add-sexo">
-            <option value="">Sexo</option>
-            <option value="M">Masculino</option>
-            <option value="F">Feminino</option>
-          </select>
-
-          <div class="modal-secao">Contato</div>
-          <input
-            id="add-celular"
-            placeholder="Celular (00) 00000-0000"
-            maxlength="15"
-          />
-          <input id="add-email" placeholder="Email" />
-
-          <div class="modal-secao">Endereço</div>
-          <input id="add-cep" placeholder="CEP (00000-000)" maxlength="9" />
-          <input id="add-numero" placeholder="Número" />
-          <input id="add-rua" placeholder="Rua" readonly />
-          <input id="add-bairro" placeholder="Bairro" readonly />
-          <input id="add-cidade" placeholder="Cidade" readonly />
-          <input id="add-estado" placeholder="UF" readonly />
-
-          <div class="modal-secao">Veículo</div>
-          <input id="add-modelo" placeholder="Modelo" />
-          <input id="add-cor" placeholder="Cor" />
-          <input id="add-placa" placeholder="Placa" />
-        </div>
-        <div class="modal-rodape">
-          <button class="btn-cancelar" onclick="fecharModalAdicionar()">
-            Cancelar
-          </button>
-          <button onclick="salvarAdicionar()">Salvar</button>
         </div>
       </div>
     </div>
@@ -247,6 +202,43 @@
           <button class="btn-cancelar" onclick="fecharModalBusca()">
             Cancelar
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL INFO CADASTRADO -->
+    <div id="modal-info-cadastrado" class="modal-overlay">
+      <div
+        class="modal-box"
+        style="width: 500px; max-height: 80vh; overflow-y: auto"
+      >
+        <h2 class="modal-titulo">Informações do Cadastrado</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+          <div class="modal-secao">Morador</div>
+          <div><strong>Nome:</strong> <span id="info-nome"></span></div>
+          <div><strong>CPF:</strong> <span id="info-cpf"></span></div>
+          <div><strong>Nascimento:</strong> <span id="info-data"></span></div>
+          <div><strong>Sexo:</strong> <span id="info-sexo"></span></div>
+
+          <div class="modal-secao">Contato</div>
+          <div><strong>Celular:</strong> <span id="info-celular"></span></div>
+          <div><strong>Email:</strong> <span id="info-email"></span></div>
+
+          <div class="modal-secao">Endereço</div>
+          <div><strong>Rua:</strong> <span id="info-rua"></span></div>
+          <div><strong>Número:</strong> <span id="info-numero"></span></div>
+          <div><strong>Bairro:</strong> <span id="info-bairro"></span></div>
+          <div><strong>Cidade:</strong> <span id="info-cidade"></span></div>
+          <div><strong>Estado:</strong> <span id="info-estado"></span></div>
+          <div><strong>CEP:</strong> <span id="info-cep"></span></div>
+
+          <div class="modal-secao">Veículo</div>
+          <div><strong>Modelo:</strong> <span id="info-modelo"></span></div>
+          <div><strong>Cor:</strong> <span id="info-cor"></span></div>
+          <div><strong>Placa:</strong> <span id="info-placa"></span></div>
+        </div>
+        <div class="modal-rodape">
+          <button onclick="fecharModal('modal-info-cadastrado')">Fechar</button>
         </div>
       </div>
     </div>

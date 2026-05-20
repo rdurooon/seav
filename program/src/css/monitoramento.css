@@ -92,13 +92,39 @@
 }
 
 .mon-botoes {
-    display: flex;
-    gap: 16px;
-    justify-content: flex-end;
-    padding-bottom: 16px;
-    padding-right: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  padding-bottom: 16px;
+  padding-right: 8px;
 }
 
 .mon-botoes button {
   padding: 12px 24px;
+}
+
+.mon-tabela table {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--cor-borda);
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.mon-tabela tr {
+  height: 40px;
+  max-height: 40px;
+}
+
+.mon-tabela td,
+.mon-tabela th {
+  padding: 8px 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mon-tabela tbody tr td:empty {
+  border-color: transparent;
 }
