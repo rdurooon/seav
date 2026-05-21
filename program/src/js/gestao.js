@@ -68,15 +68,32 @@ function detectarFiltro(termo) {
   return "nome";
 }
 
+function aplicarMascaraCPFPesquisa(campo) {
+  const apenasNumeros = campo.value.replace(/\D/g, "");
+  if (
+    /^\d+$/.test(campo.value.replace(/\D/g, "")) &&
+    apenasNumeros.length > 0
+  ) {
+    let v = apenasNumeros;
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    campo.value = v;
+  }
+}
+
 function pesquisar() {
-  const termo = document.getElementById("campo-pesquisa").value.toLowerCase();
+  const campo = document.getElementById("campo-pesquisa");
+  const apenasNumeros = /^\d[\d\.]*$/.test(campo.value);
+  if (apenasNumeros) aplicarMascaraCPFPesquisa(campo);
+
+  const termo = campo.value.toLowerCase();
   if (!termo) {
     renderizarTabela(cacheVeiculos);
     return;
   }
 
   const filtro = detectarFiltro(termo);
-
   const filtrado = cacheVeiculos.filter((linha) => {
     const [id, nome, cpf, modelo, cor, placa] = linha;
     const cpfLimpo = cpf?.replace(/\D/g, "") || "";
@@ -90,6 +107,58 @@ function pesquisar() {
   });
 
   renderizarTabela(filtrado);
+}
+
+function buscarNoModal() {
+  const campo = document.getElementById("campo-busca-modal");
+  const apenasNumeros = /^\d[\d\.]*$/.test(campo.value);
+  if (apenasNumeros) aplicarMascaraCPFPesquisa(campo);
+
+  const termo = campo.value.toLowerCase();
+  const filtro = detectarFiltro(termo);
+  const container = document.getElementById("resultados-busca");
+  container.innerHTML = "";
+
+  if (!termo) return;
+
+  const filtrado = cacheVeiculos.filter((linha) => {
+    const [id, nome, cpf, modelo, cor, placa] = linha;
+    const cpfLimpo = cpf?.replace(/\D/g, "") || "";
+    const termoLimpo = termo.replace(/\D/g, "");
+    const placaLimpa = placa?.replace(/-/g, "").toLowerCase() || "";
+
+    if (filtro === "cpf") return cpfLimpo.includes(termoLimpo);
+    if (filtro === "placa") return placaLimpa.includes(termo.replace(/-/g, ""));
+    if (filtro === "nome") return nome?.toLowerCase().includes(termo);
+    return true;
+  });
+
+  if (filtrado.length === 0) {
+    container.innerHTML = `<p style="color:#aaa; text-align:center; font-style:italic;">Nenhum resultado encontrado</p>`;
+    return;
+  }
+
+  filtrado.forEach((linha) => {
+    const [id, nome, cpf, modelo, cor, placa] = linha;
+    const div = document.createElement("div");
+    div.style.cssText = `
+            padding: 10px 14px;
+            border: 1.5px solid var(--cor-borda);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        `;
+    div.innerHTML = `
+            <span><strong>${nome}</strong></span>
+            <span style="color:#888;">${placa ? placa.replace(/-/g, "").toUpperCase() : "Sem placa"} · ${modelo || "Sem veículo"}</span>
+        `;
+    div.onmouseover = () => (div.style.background = "#f0f4f8");
+    div.onmouseout = () => (div.style.background = "");
+    div.onclick = () => selecionarDaBusca(id);
+    container.appendChild(div);
+  });
 }
 
 // ═══════════════════════════════════════
@@ -331,52 +400,6 @@ function fecharModalBusca() {
   fecharModal("modal-busca");
 }
 
-function buscarNoModal() {
-  const termo = document
-    .getElementById("campo-busca-modal")
-    .value.toLowerCase();
-  const filtro = detectarFiltro(termo);
-  const container = document.getElementById("resultados-busca");
-  container.innerHTML = "";
-
-  if (!termo) return;
-
-  const filtrado = cacheVeiculos.filter((linha) => {
-    const [id, nome, cpf, modelo, cor, placa] = linha;
-    if (filtro === "nome") return nome?.toLowerCase().includes(termo);
-    if (filtro === "cpf") return cpf?.toLowerCase().includes(termo);
-    if (filtro === "placa") return placa?.toLowerCase().includes(termo);
-    return true;
-  });
-
-  if (filtrado.length === 0) {
-    container.innerHTML = `<p style="color:#aaa; text-align:center; font-style:italic;">Nenhum resultado encontrado</p>`;
-    return;
-  }
-
-  filtrado.forEach((linha) => {
-    const [id, nome, cpf, modelo, cor, placa] = linha;
-    const div = document.createElement("div");
-    div.style.cssText = `
-            padding: 10px 14px;
-            border: 1.5px solid var(--cor-borda);
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-        `;
-    div.innerHTML = `
-            <span><strong>${nome}</strong></span>
-            <span style="color:#888;">${placa || "Sem placa"} · ${modelo || "Sem veículo"}</span>
-        `;
-    div.onmouseover = () => (div.style.background = "#f0f4f8");
-    div.onmouseout = () => (div.style.background = "");
-    div.onclick = () => selecionarDaBusca(id);
-    container.appendChild(div);
-  });
-}
-
 async function selecionarDaBusca(id) {
   idSelecionado = id;
   fecharModalBusca();
@@ -462,6 +485,9 @@ function validarCPF(cpf) {
   return resto === parseInt(cpf[10]);
 }
 
+// ═══════════════════════════════════════
+// INFO CADASTRADO
+// ═══════════════════════════════════════
 async function abrirInfoCadastrado(id) {
   const dados = await window.pywebview.api.buscar_morador(id);
   const [
