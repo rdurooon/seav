@@ -62,14 +62,9 @@ function renderizarTabela(dados) {
 // PESQUISA
 // ═══════════════════════════════════════
 function detectarFiltro(termo) {
-  // se tem só números, é CPF
   if (/^\d+$/.test(termo)) return "cpf";
-  // se tem pontos ou traço, é CPF
   if (/[\.\-]/.test(termo) && /\d/.test(termo)) return "cpf";
-  // se tem letras e números misturados, é placa
   if (/[a-zA-Z]/.test(termo) && /\d/.test(termo)) return "placa";
-  // se tem só letras, pode ser placa ou nome
-  if (/^[a-zA-Z]{1,3}$/.test(termo)) return "placa";
   return "nome";
 }
 

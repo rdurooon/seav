@@ -38,8 +38,6 @@
     <div id="modal-config" class="modal-overlay">
       <div class="modal-box" style="width: 450px">
         <h2 class="modal-titulo">Configurações</h2>
-
-        <!-- PORTA SERIAL -->
         <div style="display: flex; flex-direction: column; gap: 8px">
           <label style="font-size: 0.85rem; font-weight: 700; color: #1e2d3d"
             >Porta do receptor</label
@@ -68,11 +66,7 @@
             </button>
           </div>
         </div>
-
-        <!-- DIVISOR -->
         <hr style="border: none; border-top: 1px solid #e0e0e0" />
-
-        <!-- ERROS DO TERMINAL -->
         <div
           style="
             display: flex;
@@ -93,12 +87,63 @@
             <span class="slider-thumb"></span>
           </label>
         </div>
-
         <div class="modal-rodape">
           <button class="btn-cancelar" onclick="fecharConfig()">
             Cancelar
           </button>
           <button onclick="salvarConfig()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL ADICIONAR -->
+    <div id="modal-adicionar" class="modal-overlay">
+      <div
+        class="modal-box"
+        style="width: 600px; max-height: 80vh; overflow-y: auto"
+      >
+        <h2 class="modal-titulo">Adicionar</h2>
+        <div class="modal-grid">
+          <div class="modal-secao">Morador</div>
+          <input id="add-nome" placeholder="Nome completo" />
+          <input
+            id="add-cpf"
+            placeholder="CPF (000.000.000-00)"
+            maxlength="14"
+          />
+          <input id="add-data" type="date" />
+          <select id="add-sexo">
+            <option value="">Sexo</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select>
+
+          <div class="modal-secao">Contato</div>
+          <input
+            id="add-celular"
+            placeholder="Celular (00) 00000-0000"
+            maxlength="15"
+          />
+          <input id="add-email" placeholder="Email" />
+
+          <div class="modal-secao">Endereço</div>
+          <input id="add-cep" placeholder="CEP (00000-000)" maxlength="9" />
+          <input id="add-numero" placeholder="Número" />
+          <input id="add-rua" placeholder="Rua" readonly />
+          <input id="add-bairro" placeholder="Bairro" readonly />
+          <input id="add-cidade" placeholder="Cidade" readonly />
+          <input id="add-estado" placeholder="UF" readonly />
+
+          <div class="modal-secao">Veículo</div>
+          <input id="add-modelo" placeholder="Modelo" />
+          <input id="add-cor" placeholder="Cor" />
+          <input id="add-placa" placeholder="Placa" />
+        </div>
+        <div class="modal-rodape">
+          <button class="btn-cancelar" onclick="fecharModalAdicionar()">
+            Cancelar
+          </button>
+          <button onclick="salvarAdicionar()">Salvar</button>
         </div>
       </div>
     </div>
