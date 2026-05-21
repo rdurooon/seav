@@ -208,3 +208,6 @@ class API:
         for porta in portas:
             portas_disponiveis.append(porta.device)
         return portas_disponiveis
+    
+    def get_status(self):
+     return "Sem Conexão"
