@@ -394,6 +394,36 @@ function onPlacaDetectada(dados) {
   }
 }
 
+let infoPagina = 1;
+
+function trocarPaginaInfo() {
+  const p1 = document.getElementById("info-pagina-1");
+  const p2 = document.getElementById("info-pagina-2");
+  const seta = document.getElementById("info-seta");
+
+  if (infoPagina === 1) {
+    p1.style.display = "none";
+    p2.style.display = "block";
+    seta.textContent = "‹";
+    infoPagina = 2;
+  } else {
+    p1.style.display = "block";
+    p2.style.display = "none";
+    seta.textContent = "›";
+    infoPagina = 1;
+  }
+}
+
+// Reset ao abrir
+const _origAbrirInfo = abrirInfo;
+abrirInfo = function () {
+  infoPagina = 1;
+  document.getElementById("info-pagina-1").style.display = "block";
+  document.getElementById("info-pagina-2").style.display = "none";
+  document.getElementById("info-seta").textContent = "›";
+  _origAbrirInfo();
+};
+
 // ═══════════════════════════════════════
 // INICIALIZAÇÃO
 // ═══════════════════════════════════════

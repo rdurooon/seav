@@ -12,24 +12,94 @@
     <button id="btn-voltar" onclick="navegarPara('menu')" style="display: none">
       ← Voltar
     </button>
-
     <main id="content"></main>
 
     <!-- MODAL INFO -->
     <div id="modal-info" class="modal-overlay">
-      <div class="modal-box" style="width: 400px">
+      <div class="modal-box" style="width: 450px">
         <h2 class="modal-titulo">Sobre o SEAV</h2>
-        <p style="font-size: 0.9rem"><strong>Versão:</strong> 1.0</p>
-        <p style="font-size: 0.9rem"><strong>Criadores:</strong></p>
-        <ul style="font-size: 0.9rem; padding-left: 20px; line-height: 2">
-          <li>Leandro Marques</li>
-          <li>Pedro Smith</li>
-          <li>Ruan Durão</li>
-          <li>Lucas Mendes</li>
-          <li>Fábio Martel</li>
-        </ul>
-        <div class="modal-rodape">
+
+        <!-- PÁGINA 1 -->
+        <div id="info-pagina-1">
+          <p style="font-size: 0.9rem"><strong>Versão:</strong> 1.0</p>
+          <p style="font-size: 0.9rem; margin-top: 8px">
+            <strong>Criadores:</strong>
+          </p>
+          <ul style="font-size: 0.9rem; padding-left: 20px; line-height: 2">
+            <li>Leandro Marques</li>
+            <li>Pedro Smith</li>
+            <li>Ruan Durão</li>
+            <li>Lucas Mendes</li>
+            <li>Fábio Martel</li>
+          </ul>
+        </div>
+
+        <!-- PÁGINA 2 -->
+        <div id="info-pagina-2" style="display: none">
+          <p style="font-size: 0.9rem; font-weight: 700; color: #1e2d3d">
+            Status do sistema:
+          </p>
+          <ul
+            style="
+              font-size: 0.85rem;
+              padding-left: 20px;
+              line-height: 2;
+              color: #444;
+            "
+          >
+            <li><strong>Sem conexão</strong> — receptor não conectado</li>
+            <li>
+              <strong>Escutando...</strong> — receptor conectado, câmera e
+              controladora desconectadas
+            </li>
+            <li>
+              <strong>1/2</strong> — câmera ou controladora conectada ao
+              receptor
+            </li>
+            <li>
+              <strong>Pronto</strong> — câmera e controladora conectadas ao
+              receptor
+            </li>
+          </ul>
+          <hr
+            style="border: none; border-top: 1px solid #e0e0e0; margin: 8px 0"
+          />
+          <p style="font-size: 0.85rem">
+            <strong>Repositório:</strong>
+            <a
+              href="https://github.com/rdurooon/seav"
+              target="_blank"
+              style="color: #1e2d3d; text-decoration: underline"
+            >
+              github.com/rdurooon/seav
+            </a>
+          </p>
+        </div>
+
+        <div
+          class="modal-rodape"
+          style="margin-top: 16px; justify-content: space-between"
+        >
           <button onclick="fecharInfo()">Fechar</button>
+          <button
+            id="info-seta"
+            onclick="trocarPaginaInfo()"
+            style="
+              background: #1e2d3d;
+              color: #fff;
+              border: none;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              font-size: 1.2rem;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
+            ›
+          </button>
         </div>
       </div>
     </div>
