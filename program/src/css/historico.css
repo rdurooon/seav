@@ -1,64 +1,75 @@
 .historico-container {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    padding: 16px 24px;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px 24px;
+  gap: 12px;
 }
 
 .historico-topo {
-    display: flex;
-    flex-direction: column;
-    font-size: 0.85rem;
-    color: var(--cor-texto);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--cor-texto);
 }
 
 .historico-conteudo {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 12px;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 12px;
+  overflow: hidden;
 }
 
 .historico-header h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--cor-texto);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--cor-texto);
 }
 
 .historico-filtros {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .historico-filtros input {
-    border: 1.5px solid var(--cor-borda);
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 0.85rem;
-    font-family: var(--fonte);
-    color: var(--cor-texto);
-    background: var(--cor-fundo);
-    width: 130px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-family: var(--fonte);
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  width: 130px;
 }
 
 .historico-filtros button {
-    padding: 6px 18px;
-    font-size: 0.85rem;
-    border-radius: 6px;
-}
-
-.historico-tabela {
-    flex: 1;
-    border: 2px solid var(--cor-borda);
-    border-radius: 12px;
-    overflow: hidden;
+  padding: 6px 18px;
+  font-size: 0.85rem;
+  border-radius: 6px;
 }
 
 .historico-tabela table {
-    width: 100%;
-    height: 100%;
-    table-layout: fixed;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  height: auto;
+}
+
+.historico-tabela tr {
+  height: 40px;
+  max-height: 40px;
+}
+
+.historico-tabela td,
+.historico-tabela th {
+  padding: 8px 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.historico-tabela tbody tr td:empty {
+  border-color: transparent;
 }

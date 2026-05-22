@@ -3,6 +3,7 @@ import mysql.connector
 class Api:
 
     def conectar(self):
+
      return mysql.connector.connect(
         host="",
         port=3306,
@@ -90,10 +91,8 @@ class Api:
         """)
 
         dados = cursor.fetchall()
-
         cursor.close()
         conexao.close()
-
         return dados
 
     # ---------------- BUSCAR UM ----------------
@@ -109,21 +108,17 @@ class Api:
                     m.cpf,
                     DATE_FORMAT(m.data_nascimento, '%Y-%m-%d'),
                     m.sexo,
-
                     c.celular,
                     c.email,
-
                     e.rua,
                     e.numero,
                     e.bairro,
                     e.cidade,
                     e.estado,
                     e.cep,
-
                     v.modelo,
                     v.cor,
                     v.placa
-
                 FROM moradores m
                 LEFT JOIN contato c ON m.id_morador = c.id_morador
                 LEFT JOIN endereco e ON m.id_morador = e.id_morador
@@ -147,7 +142,6 @@ class Api:
 
         try:
             id_morador = dados.get("id_morador")
-
             if not id_morador:
                 return "ID não recebido"
 
@@ -233,7 +227,6 @@ class Api:
         cursor = conexao.cursor()
 
         try:
-            # Criar tabela se não existe
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS config (
                     chave VARCHAR(255) PRIMARY KEY,
@@ -258,7 +251,6 @@ class Api:
         cursor = conexao.cursor()
 
         try:
-            # Criar tabela se não existe
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS config (
                     chave VARCHAR(255) PRIMARY KEY,
@@ -361,7 +353,7 @@ class Api:
                     veiculo,
                     morador,
                     endereco,
-                    DATE_FORMAT(data_hora, '%d/%m/%Y %H:%i:%s'),
+                    DATE_FORMAT(data_hora, '%%d/%%m/%%Y %%H:%%i:%%s'),
                     status
                 FROM historico
             """
@@ -370,13 +362,13 @@ class Api:
 
             if data_inicio:
                 filtros.append("data_hora >= %s")
-                parametros.append(f"{data_inicio} 00:00:00")
+                parametros.append(data_inicio + " 00:00:00")
             if data_fim:
                 filtros.append("data_hora <= %s")
-                parametros.append(f"{data_fim} 23:59:59")
+                parametros.append(data_fim + " 23:59:59")
             if placa:
                 filtros.append("placa LIKE %s")
-                parametros.append(f"%{placa}%")
+                parametros.append("%" + placa + "%")
 
             if filtros:
                 query += " WHERE " + " AND ".join(filtros)

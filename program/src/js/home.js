@@ -424,6 +424,93 @@ abrirInfo = function () {
 };
 
 // ═══════════════════════════════════════
+// MODAL ACESSO
+// ═══════════════════════════════════════
+let _acessoCountdownInterval = null;
+let _acessoAutorizado = false;
+
+function onPlacaDetectada(dados) {
+  try {
+    const { placa, autorizado, veiculo, morador, endereco, status, data_hora } =
+      dados;
+
+    _acessoAutorizado = autorizado;
+
+    // preenche os dados
+    document.getElementById("acesso-placa").textContent = placa || "—";
+    document.getElementById("acesso-veiculo").textContent = veiculo || "—";
+    document.getElementById("acesso-morador").textContent = morador || "—";
+    document.getElementById("acesso-endereco").textContent = endereco || "—";
+    document.getElementById("acesso-status").textContent = status || "—";
+
+    // foto do carro — usa o último frame da câmera
+    const imgCarro = document.getElementById("acesso-img-carro");
+    const semFoto = document.getElementById("acesso-sem-foto");
+    if (lastFrameBase64) {
+      imgCarro.src = lastFrameBase64;
+      imgCarro.style.display = "block";
+      semFoto.style.display = "none";
+    } else {
+      imgCarro.style.display = "none";
+      semFoto.style.display = "block";
+    }
+
+    // câmera em tempo real
+    const acessoCamera = document.getElementById("acesso-camera");
+    if (lastFrameBase64) acessoCamera.src = lastFrameBase64;
+
+    // abre o modal
+    abrirModal("modal-acesso");
+
+    // countdown só para autorizados
+    if (autorizado) {
+      iniciarCountdownAcesso(10);
+    } else {
+      document.getElementById("acesso-countdown").style.display = "none";
+    }
+
+    // atualiza tabela de acessos se estiver na tela de monitoramento
+    const tabela = document.getElementById("tabela-acessos");
+    if (tabela) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${placa}</td><td>${veiculo || "—"}</td><td>${morador || "—"}</td><td>${data_hora}</td>`;
+      tabela.insertBefore(tr, tabela.firstChild);
+    }
+  } catch (e) {
+    console.warn("onPlacaDetectada error", e);
+  }
+}
+
+function iniciarCountdownAcesso(segundos) {
+  if (_acessoCountdownInterval) clearInterval(_acessoCountdownInterval);
+
+  const countdown = document.getElementById("acesso-countdown");
+  const timer = document.getElementById("acesso-timer");
+  countdown.style.display = "block";
+  timer.textContent = segundos;
+
+  let restante = segundos;
+  _acessoCountdownInterval = setInterval(() => {
+    restante--;
+    timer.textContent = restante;
+    if (restante <= 0) {
+      clearInterval(_acessoCountdownInterval);
+      fecharModal("modal-acesso");
+    }
+  }, 1000);
+}
+
+function cancelarAbertura() {
+  if (_acessoCountdownInterval) clearInterval(_acessoCountdownInterval);
+  fecharModal("modal-acesso");
+}
+
+function adiantarAbertura() {
+  if (_acessoCountdownInterval) clearInterval(_acessoCountdownInterval);
+  fecharModal("modal-acesso");
+}
+
+// ═══════════════════════════════════════
 // INICIALIZAÇÃO
 // ═══════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
