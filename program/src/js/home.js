@@ -361,28 +361,27 @@ function onPlacaDetectada(dados) {
     const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
     const placa = obj.placa;
     const autorizado = !!obj.autorizado;
-    const morador = obj.morador || null;
+    const veiculo = obj.veiculo || "";
+    const morador = obj.morador || "";
+    const dataHora = obj.data_hora || new Date().toLocaleString();
     const panel = document.getElementById("placa-panel");
     if (!panel) return;
 
     panel.style.display = "block";
-    panel.innerHTML = `<strong>${placa}</strong><br>${autorizado ? "Autorizado" : "Não cadastrado"}`;
+    panel.innerHTML = `<strong>${placa}</strong><br>${autorizado ? "Autorizado" : "Negado"}`;
 
-    if (autorizado) {
-      const tabela = document.getElementById("tabela-acessos");
-      if (tabela) {
-        try {
-          const id_morador = morador && morador[0] ? morador[0] : null;
-          pywebview.api
-            .registrar_acesso(placa, id_morador, true)
-            .then(() => {
-              const tr = document.createElement("tr");
-              const now = new Date().toLocaleString();
-              tr.innerHTML = `<td>${placa}</td><td>-</td><td>${morador ? morador[3] || "" : ""}</td><td>${now}</td>`;
-              tabela.insertBefore(tr, tabela.firstChild);
-            })
-            .catch(() => {});
-        } catch (e) {}
+    const tabela = document.getElementById("tabela-acessos");
+    if (tabela) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${placa}</td>
+        <td>${veiculo || ""}</td>
+        <td>${morador || ""}</td>
+        <td>${dataHora}</td>
+      `;
+      tabela.insertBefore(tr, tabela.firstChild);
+      while (tabela.children.length > 8) {
+        tabela.removeChild(tabela.lastChild);
       }
     }
 

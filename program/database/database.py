@@ -283,18 +283,26 @@ class Api:
             cursor.execute("""
                 SELECT
                     v.placa,
-                    v.id_morador,
+                    v.modelo,
+                    v.cor,
                     m.id_morador,
                     m.nome,
-                    m.cpf
+                    e.rua,
+                    e.numero,
+                    e.bairro,
+                    e.cidade,
+                    e.estado,
+                    e.cep
                 FROM veiculo v
                 LEFT JOIN moradores m ON v.id_morador = m.id_morador
+                LEFT JOIN endereco e ON m.id_morador = e.id_morador
                 WHERE v.placa = %s
+                LIMIT 1
             """, (placa,))
 
             return cursor.fetchone()
 
-        except Exception as e:
+        except Exception:
             return None
 
         finally:
@@ -302,31 +310,85 @@ class Api:
             conexao.close()
 
     # ---------------- REGISTRAR ACESSO ----------------
-    def registrar_acesso(self, placa, id_morador, autorizado):
+    def registrar_acesso(self, placa, id_morador=None, autorizado=False, veiculo=None, morador=None, endereco=None, data_hora=None, status=None):
         conexao = self.conectar()
         cursor = conexao.cursor()
 
         try:
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS historico_acessos (
+                CREATE TABLE IF NOT EXISTS historico (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     placa VARCHAR(20),
-                    id_morador INT NULL,
-                    autorizado TINYINT,
-                    data_hora DATETIME DEFAULT CURRENT_TIMESTAMP
+                    veiculo VARCHAR(255),
+                    morador VARCHAR(255),
+                    endereco TEXT,
+                    status VARCHAR(50),
+                    data_hora DATETIME,
+                    id_morador INT NULL
                 )
             """)
 
-            cursor.execute("""
-                INSERT INTO historico_acessos (placa, id_morador, autorizado)
-                VALUES (%s, %s, %s)
-            """, (placa, id_morador, 1 if autorizado else 0))
+            if data_hora:
+                cursor.execute("""
+                    INSERT INTO historico (placa, veiculo, morador, endereco, status, data_hora, id_morador)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (placa, veiculo, morador, endereco, status, data_hora, id_morador))
+            else:
+                cursor.execute("""
+                    INSERT INTO historico (placa, veiculo, morador, endereco, status, data_hora, id_morador)
+                    VALUES (%s, %s, %s, %s, %s, NOW(), %s)
+                """, (placa, veiculo, morador, endereco, status, id_morador))
 
             conexao.commit()
             return True
         except Exception as e:
             conexao.rollback()
+            print(f"[DB] registrar_acesso error: {e}")
             return False
+        finally:
+            cursor.close()
+            conexao.close()
+
+    # ---------------- LISTAR HISTÓRICO ----------------
+    def listar_historico(self, data_inicio=None, data_fim=None, placa=None):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+
+        try:
+            query = """
+                SELECT
+                    placa,
+                    veiculo,
+                    morador,
+                    endereco,
+                    DATE_FORMAT(data_hora, '%d/%m/%Y %H:%i:%s'),
+                    status
+                FROM historico
+            """
+            filtros = []
+            parametros = []
+
+            if data_inicio:
+                filtros.append("data_hora >= %s")
+                parametros.append(f"{data_inicio} 00:00:00")
+            if data_fim:
+                filtros.append("data_hora <= %s")
+                parametros.append(f"{data_fim} 23:59:59")
+            if placa:
+                filtros.append("placa LIKE %s")
+                parametros.append(f"%{placa}%")
+
+            if filtros:
+                query += " WHERE " + " AND ".join(filtros)
+
+            query += " ORDER BY data_hora DESC"
+
+            cursor.execute(query, tuple(parametros))
+            return cursor.fetchall()
+
+        except Exception as e:
+            print(f"[DB] listar_historico error: {e}")
+            return []
         finally:
             cursor.close()
             conexao.close()

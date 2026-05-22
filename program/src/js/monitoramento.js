@@ -285,27 +285,26 @@ function onPlacaDetectada(dados) {
     const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
     const placa = obj.placa;
     const autorizado = !!obj.autorizado;
-    let morador = obj.morador || null;
+    const veiculo = obj.veiculo || "";
+    const morador = obj.morador || "";
+    const dataHora = obj.data_hora || new Date().toLocaleString();
 
     panel.style.display = "block";
-    panel.innerHTML = `<strong>${placa}</strong><br>${autorizado ? "Autorizado" : "Não cadastrado"}`;
+    panel.innerHTML = `<strong>${placa}</strong><br>${autorizado ? "Autorizado" : "Negado"}`;
 
-    if (autorizado) {
-      // registrar acesso no backend
-      try {
-        const id_morador = morador && morador[0] ? morador[0] : null;
-        pywebview.api
-          .registrar_acesso(placa, id_morador, true)
-          .then((res) => {
-            // adicionar à tabela localmente
-            const tabela = document.getElementById("tabela-acessos");
-            const tr = document.createElement("tr");
-            const now = new Date().toLocaleString();
-            tr.innerHTML = `<td>${placa}</td><td>-</td><td>${morador ? morador[3] || "" : ""}</td><td>${now}</td>`;
-            tabela.insertBefore(tr, tabela.firstChild);
-          })
-          .catch(() => {});
-      } catch (e) {}
+    const tabela = document.getElementById("tabela-acessos");
+    if (tabela) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${placa}</td>
+        <td>${veiculo || ""}</td>
+        <td>${morador || ""}</td>
+        <td>${dataHora}</td>
+      `;
+      tabela.insertBefore(tr, tabela.firstChild);
+      while (tabela.children.length > 8) {
+        tabela.removeChild(tabela.lastChild);
+      }
     }
 
     // esconder painel após 6s
@@ -315,6 +314,42 @@ function onPlacaDetectada(dados) {
   } catch (e) {
     console.warn("onPlacaDetectada error", e);
   }
+}
+
+function carregarUltimosAcessos() {
+  // Tenta buscar últimos acessos com retries para garantir disponibilidade do pywebview.api
+  const maxAttempts = 10;
+  let attempt = 0;
+
+  function tryLoad() {
+    attempt++;
+    try {
+      if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.get_ultimos_acessos) {
+        if (attempt < maxAttempts) {
+          setTimeout(tryLoad, 200);
+        } else {
+          console.warn("carregarUltimosAcessos: pywebview.api não disponível");
+        }
+        return;
+      }
+
+      window.pywebview.api
+        .get_ultimos_acessos()
+        .then((dados) => {
+          console.log("carregarUltimosAcessos: received", dados && dados.length ? dados.length : 0);
+          renderizarTabelaAcessos(dados || []);
+        })
+        .catch((err) => {
+          console.warn("carregarUltimosAcessos error (call)", err);
+          if (attempt < maxAttempts) setTimeout(tryLoad, 200);
+        });
+    } catch (e) {
+      console.warn("carregarUltimosAcessos error", e);
+      if (attempt < maxAttempts) setTimeout(tryLoad, 200);
+    }
+  }
+
+  tryLoad();
 }
 
 function renderizarTabelaAcessos(dados) {
@@ -352,3 +387,4 @@ function renderizarTabelaAcessos(dados) {
 // Inicializar
 setCameraPlaceholder(true);
 atualizarStatus();
+carregarUltimosAcessos();

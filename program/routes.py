@@ -2,12 +2,22 @@ from database.database import Api
 from serial_reader import SerialReader
 import serial.tools.list_ports
 import json
+from datetime import datetime
+
+# Buffer global para últimos acessos mantido durante toda a execução
+ULTIMOS_ACESSOS = []
 
 class API:
     def __init__(self):
         self.db = Api()
         self.serial_reader = SerialReader()
         self.window = None
+        # compartilhar buffer de últimos acessos no módulo (sobrevive a múltiplas instâncias)
+        try:
+            global ULTIMOS_ACESSOS
+        except NameError:
+            ULTIMOS_ACESSOS = []
+        self.ultimo_acessos = ULTIMOS_ACESSOS
         # Tentar conectar à porta salva automaticamente
         self._conectar_porta_salva_auto()
     
@@ -65,43 +75,117 @@ class API:
         except Exception:
             pass
 
+    def _adicionar_ultimo_acesso(self, registro):
+        try:
+            self.ultimo_acessos.insert(0, registro)
+            if len(self.ultimo_acessos) > 8:
+                self.ultimo_acessos.pop()
+            print(f"[API] _adicionar_ultimo_acesso added, new_count={len(self.ultimo_acessos)}, registro={registro}")
+        except Exception as e:
+            print(f"[API] _adicionar_ultimo_acesso error: {e}")
+
+    def get_ultimos_acessos(self):
+        try:
+            print(f"[API] get_ultimos_acessos called, count={len(self.ultimo_acessos)}")
+            return list(self.ultimo_acessos)
+        except Exception:
+            return []
+
+    def debug_ultimos(self):
+        try:
+            return {"count": len(self.ultimo_acessos), "items": list(self.ultimo_acessos)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _format_endereco(self, rua, numero, bairro, cidade, estado, cep):
+        partes = []
+        if rua:
+            partes.append(str(rua).strip())
+        if numero is not None and str(numero).strip():
+            partes.append(str(numero).strip())
+        if bairro:
+            partes.append(str(bairro).strip())
+        local = ', '.join(filter(None, [str(cidade).strip() if cidade else None, str(estado).strip() if estado else None]))
+        if local:
+            partes.append(local)
+        if cep:
+            partes.append(str(cep).strip())
+        return ', '.join([p for p in partes if p])
+
     def __on_placa_detectada(self, placa_text):
         try:
             resultado = self.db.buscar_veiculo_por_placa(placa_text)
+            autorizado = bool(resultado)
+            # data/hora para exibição e para salvar no banco (ISO)
+            data_hora_display = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            data_hora_db = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            if not resultado:
-                # Placa reconhecida mas não cadastrada
+            if autorizado:
+                try:
+                    print(f"Placa {placa_text} reconhecida e cadastrada. Abrir portão!")
+                except Exception:
+                    pass
+
+                _, modelo, cor, id_morador, nome, rua, numero, bairro, cidade, estado, cep = resultado
+                veiculo = " ".join([p for p in [modelo, cor] if p]).strip()
+                morador = nome or ""
+                endereco = self._format_endereco(rua, numero, bairro, cidade, estado, cep)
+                status = "Autorizado"
+            else:
                 try:
                     print(f"Placa {placa_text} reconhecida, porém não cadastrada. Manter portão fechado!")
                 except Exception:
                     pass
-                self._processar_placa_nao_cadastrada(placa_text)
-                return
 
-            # Placa reconhecida e cadastrada
+                id_morador = None
+                veiculo = ""
+                morador = ""
+                endereco = ""
+                status = "Negado"
+
+            # manter histórico em memória (persistente apenas até o fim do processo)
+            self._adicionar_ultimo_acesso([
+                placa_text,
+                veiculo,
+                morador,
+                data_hora_display,
+            ])
+
+            # salvar no banco usando timestamp ISO (YYYY-MM-DD HH:MM:SS)
             try:
-                print(f"Placa {placa_text} reconhecida e cadastrada. Abrir portão!")
-            except Exception:
-                pass
-
-            autorizado = True
-            morador = resultado
+                saved = self.db.registrar_acesso(
+                    placa_text,
+                    id_morador,
+                    autorizado,
+                    veiculo,
+                    morador,
+                    endereco,
+                    data_hora_db,
+                    status,
+                )
+                if not saved:
+                    print(f"[API] registrar_acesso falhou para {placa_text}")
+            except Exception as e:
+                print(f"[API] registrar_acesso exception: {e}")
 
             payload = {
                 "placa": placa_text,
                 "autorizado": autorizado,
-                "morador": morador
+                "veiculo": veiculo,
+                "morador": morador,
+                "endereco": endereco,
+                "status": status,
+                "data_hora": data_hora_display,
             }
 
-            # envia ao frontend apenas para placas cadastradas
             try:
                 if hasattr(self, '_API__window') and self._API__window:
                     self._API__window.run_js(f"onPlacaDetectada({json.dumps(payload)})")
             except Exception:
                 pass
 
-            # stub para processo de abertura de portão/cancela
-            self.disparar_abertura(placa_text, morador)
+            if autorizado:
+                self.disparar_abertura(placa_text, resultado)
         except Exception:
             pass
 
@@ -143,11 +227,17 @@ class API:
             pass
         return False
 
-    def registrar_acesso(self, placa, id_morador, autorizado):
+    def registrar_acesso(self, placa, id_morador=None, autorizado=False, veiculo=None, morador=None, endereco=None, data_hora=None, status=None):
         try:
-            return self.db.registrar_acesso(placa, id_morador, autorizado)
+            return self.db.registrar_acesso(placa, id_morador, autorizado, veiculo, morador, endereco, data_hora, status)
         except Exception:
             return False
+
+    def listar_historico(self, data_inicio=None, data_fim=None, placa=None):
+        try:
+            return self.db.listar_historico(data_inicio, data_fim, placa)
+        except Exception:
+            return []
 
     def disparar_abertura(self, placa, morador):
         # TODO: implementar modal/processo de abertura real.
