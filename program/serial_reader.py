@@ -104,6 +104,25 @@ class SerialReader:
     def get_status(self):
         return self.status
 
+    def send_command(self, comando, tempo=5):
+        if not self._connected or not self.serial_conn or not self.serial_conn.is_open:
+            return False
+        try:
+            cmd = str(comando).strip().upper()
+            if cmd not in ("OPEN", "CLOSE"):
+                return False
+            tempo_int = int(tempo) if tempo is not None else 5
+            if tempo_int < 1:
+                tempo_int = 1
+            payload = f"{cmd} {tempo_int}\n".encode("utf-8")
+            self.serial_conn.write(payload)
+            self.serial_conn.flush()
+            return True
+        except Exception as e:
+            if not getattr(self, '_suppress_errors', False):
+                print(f"SerialReader send_command error: {e}")
+            return False
+
     def set_frame_callback(self, callback):
         self.__on_frame = callback
 

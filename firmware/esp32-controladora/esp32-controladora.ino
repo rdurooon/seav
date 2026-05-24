@@ -25,9 +25,13 @@ volatile bool novoCmd = false;
 enum Estado { PARADO, ABRINDO, AGUARDANDO_PASSAGEM, VEICULO_PASSANDO, FECHANDO };
 Estado estadoAtual = PARADO;
 
+const unsigned long TEMPO_ESPERA_FECHAMENTO_MS = 2000; // Delay antes de fechar após saída do sensor
+const unsigned long QUARTO_GIRO_DIVISOR = 4; // Usar apenas 1/4 do tempo original para abrir/fechar
 unsigned long tempoInicioMovimento = 0;
 unsigned long tempoAproximacaoSaida = 0; // Temporizador para o Cenário 2
+unsigned long tempoSaidaSensor = 0; // Temporizador para fechar após o carro sair completamente
 bool veiculoDetectadoNaSaida = false;
+bool esperandoFechamento = false;
 
 // Função para ler o sensor ultrassônico
 float lerDistanciaCM() {
@@ -150,14 +154,15 @@ void loop() {
   if (novoCmd) {
     novoCmd = false;
     String acao = String((char*)cmdGlobal.comando);
-    int tempoAlvoMS = cmdGlobal.tempo * 1000;
+    unsigned long tempoAlvoMS = (cmdGlobal.tempo * 1000UL) / QUARTO_GIRO_DIVISOR;
+    if (tempoAlvoMS < 100) tempoAlvoMS = 100;
 
     if (acao == "ABRIR") {
       estadoAtual = ABRINDO;
       tempoInicioMovimento = millis();
       unsigned long fim = millis() + tempoAlvoMS;
 
-      // Executa abertura completa
+      // Executa abertura de 1/4 de giro para abrir o portão para cima
       while (millis() < fim && !novoCmd) {
         for (int i = 0; i < 8 && !novoCmd; i++) {
           moverPasso(i);
@@ -165,8 +170,7 @@ void loop() {
       }
       desligarMotor();
       
-      // Mudança crítica: Ao terminar de abrir, NÃO vai para PARADO.
-      // Vai aguardar o carro passar (Cenário 1)
+      // Ao terminar de abrir, aguarda o carro passar
       if (!novoCmd) estadoAtual = AGUARDANDO_PASSAGEM;
     } 
     else if (acao == "FECHAR") {
@@ -193,12 +197,22 @@ void loop() {
   }
 
   if (estadoAtual == VEICULO_PASSANDO) {
-    // O carro já foi detectado, agora aguarda ele SAIR do raio do sensor
+    // O carro já foi detectado, agora aguarda ele SAIR do raio do sensor.
     if (distancia > DISTANCIA_DETECCAO_CM) {
-      // Carro passou! Aciona o fechamento automático.
-      cmdGlobal.tempo = 5; // Tempo necessário para fechar
-      strcpy((char*)cmdGlobal.comando, "FECHAR");
-      novoCmd = true;
+      if (!esperandoFechamento) {
+        esperandoFechamento = true;
+        tempoSaidaSensor = millis();
+      }
+      else if (millis() - tempoSaidaSensor >= TEMPO_ESPERA_FECHAMENTO_MS) {
+        // Carro saiu completamente da zona do sensor; fecha o portão.
+        cmdGlobal.tempo = 5; // Tempo necessário para fechar
+        strcpy((char*)cmdGlobal.comando, "FECHAR");
+        novoCmd = true;
+        esperandoFechamento = false;
+      }
+    } else {
+      // O carro ainda está na zona do sensor; manter o portão aberto.
+      esperandoFechamento = false;
     }
   }
 }

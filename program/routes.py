@@ -20,6 +20,16 @@ class API:
         self.ultimo_acessos = ULTIMOS_ACESSOS
         # Tentar conectar à porta salva automaticamente
         self._conectar_porta_salva_auto()
+        self._load_automacao_config()
+
+    def _load_automacao_config(self):
+        try:
+            valor = self.db.carregar_config('automacao_enabled')
+            self.automacao_habilitada = (
+                str(valor).lower() in ('1', 'true', 'yes')
+            ) if valor is not None else True
+        except Exception:
+            self.automacao_habilitada = True
     
     def _conectar_porta_salva_auto(self):
         """Tenta conectar à porta salva no banco de dados automaticamente"""
@@ -183,9 +193,6 @@ class API:
                     self._API__window.run_js(f"onPlacaDetectada({json.dumps(payload)})")
             except Exception:
                 pass
-
-            if autorizado:
-                self.disparar_abertura(placa_text, resultado)
         except Exception:
             pass
 
@@ -240,13 +247,16 @@ class API:
             return []
 
     def disparar_abertura(self, placa, morador):
-        # TODO: implementar modal/processo de abertura real.
-        # Atualmente esta função existe apenas como ponto de extensão
-        # para quando uma placa cadastrada for reconhecida em monitoramento.
         try:
-            print(f"[API] Abrir acesso para placa {placa} - morador {morador}")
-        except Exception:
-            pass
+            if not getattr(self, 'automacao_habilitada', True):
+                print(f"[API] Automação desativada. Não enviar abertura para placa {placa}")
+                return False
+            sent = self.enviar_comando_portao('OPEN', 10)
+            print(f"[API] Abrir acesso para placa {placa} - morador {morador}, enviado={sent}")
+            return sent
+        except Exception as e:
+            print(f"[API] disparar_abertura error: {e}")
+            return False
 
     def _processar_placa_nao_cadastrada(self, placa_text):
         # placeholder: não faz nada para placas não cadastradas
@@ -254,6 +264,24 @@ class API:
 
     def connect_serial(self, port):
         return self.serial_reader.connect(port)
+
+    def enviar_comando_portao(self, comando, tempo=5):
+        try:
+            return self.serial_reader.send_command(comando, tempo)
+        except Exception:
+            return False
+
+    def set_automacao(self, enabled):
+        try:
+            ativo = str(enabled).lower() in ('1', 'true', 'yes')
+            self.db.salvar_config('automacao_enabled', '1' if ativo else '0')
+            self.automacao_habilitada = ativo
+            return ativo
+        except Exception:
+            return False
+
+    def get_automacao(self):
+        return getattr(self, 'automacao_habilitada', True)
 
     def conectar_porta(self, porta):
         if self.connect_serial(f"COM{porta}"):

@@ -1,6 +1,9 @@
 const CAMERA_TIMEOUT_MS = 5000;
 let cameraTimeoutId = null;
 let lastFrameBase64 = null;
+let automacaoAtiva = true;
+let manualAcessoAberto = false;
+const ACCESS_COMMAND_DURATION = 5;
 
 // Atualizar status do sistema
 function atualizarStatus() {
@@ -8,6 +11,66 @@ function atualizarStatus() {
     document.getElementById("status-sistema").textContent =
       `Status do sistema: ${status}`;
   });
+}
+
+function atualizarBotoesMonitoramento() {
+  const btnManual = document.getElementById("btn-abre-fecha");
+  if (btnManual) {
+    btnManual.textContent = manualAcessoAberto
+      ? "Fechar acesso"
+      : "Abrir/fechar acesso";
+  }
+
+  const btnAuto = document.getElementById("btn-automacao");
+  if (btnAuto) {
+    btnAuto.textContent = automacaoAtiva
+      ? "Automação: Ativada"
+      : "Automação: Desativada";
+  }
+}
+
+async function carregarEstadoAutomacao() {
+  try {
+    const valor = await window.pywebview.api.get_automacao();
+    automacaoAtiva = !!valor;
+  } catch (e) {
+    automacaoAtiva = true;
+  }
+  atualizarBotoesMonitoramento();
+}
+
+async function abrirFecharAcesso() {
+  const acao = manualAcessoAberto ? "CLOSE" : "OPEN";
+  try {
+    const enviado = await window.pywebview.api.enviar_comando_portao(
+      acao,
+      ACCESS_COMMAND_DURATION
+    );
+    if (enviado) {
+      manualAcessoAberto = !manualAcessoAberto;
+      atualizarBotoesMonitoramento();
+      alert(`${acao === "OPEN" ? "Abertura" : "Fechamento"} enviada com sucesso.`);
+    } else {
+      alert("Não foi possível enviar o comando. Verifique a conexão serial.");
+    }
+  } catch (e) {
+    console.warn("abrirFecharAcesso error", e);
+    alert("Erro ao enviar comando de abertura/fechamento.");
+  }
+}
+
+async function ativarDesativarAutomacao() {
+  automacaoAtiva = !automacaoAtiva;
+  try {
+    await window.pywebview.api.set_automacao(automacaoAtiva);
+  } catch (e) {
+    console.warn("ativarDesativarAutomacao error", e);
+  }
+  atualizarBotoesMonitoramento();
+}
+
+function atualizarEstadoAutomacao() {
+  atualizarBotoesMonitoramento();
 }
 
 function setCameraPlaceholder(visible) {
@@ -280,6 +343,10 @@ setupROICanvas();
 // --- Placa detectada handler ---
 function onPlacaDetectada(dados) {
   try {
+    if (typeof window.showAcessoModal === "function") {
+      window.showAcessoModal(dados);
+    }
+
     const panel = document.getElementById("placa-panel");
     if (!panel) return;
     const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
@@ -388,3 +455,4 @@ function renderizarTabelaAcessos(dados) {
 setCameraPlaceholder(true);
 atualizarStatus();
 carregarUltimosAcessos();
+carregarEstadoAutomacao();

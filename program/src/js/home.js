@@ -356,43 +356,6 @@ function onOcrUpdate(dados) {
   }
 }
 
-function onPlacaDetectada(dados) {
-  try {
-    const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
-    const placa = obj.placa;
-    const autorizado = !!obj.autorizado;
-    const veiculo = obj.veiculo || "";
-    const morador = obj.morador || "";
-    const dataHora = obj.data_hora || new Date().toLocaleString();
-    const panel = document.getElementById("placa-panel");
-    if (!panel) return;
-
-    panel.style.display = "block";
-    panel.innerHTML = `<strong>${placa}</strong><br>${autorizado ? "Autorizado" : "Negado"}`;
-
-    const tabela = document.getElementById("tabela-acessos");
-    if (tabela) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${placa}</td>
-        <td>${veiculo || ""}</td>
-        <td>${morador || ""}</td>
-        <td>${dataHora}</td>
-      `;
-      tabela.insertBefore(tr, tabela.firstChild);
-      while (tabela.children.length > 8) {
-        tabela.removeChild(tabela.lastChild);
-      }
-    }
-
-    setTimeout(() => {
-      panel.style.display = "none";
-    }, 6000);
-  } catch (e) {
-    console.warn("onPlacaDetectada error", e);
-  }
-}
-
 let infoPagina = 1;
 
 function trocarPaginaInfo() {
@@ -426,24 +389,28 @@ abrirInfo = function () {
 // ═══════════════════════════════════════
 // MODAL ACESSO
 // ═══════════════════════════════════════
+const ACESSO_COUNTDOWN_SEGUNDOS = 10;
+const OPEN_COMMAND_DURATION = 5;
 let _acessoCountdownInterval = null;
 let _acessoAutorizado = false;
 
-function onPlacaDetectada(dados) {
+function showAcessoModal(dados) {
   try {
     const { placa, autorizado, veiculo, morador, endereco, status, data_hora } =
       dados;
 
+    if (!autorizado) {
+      return;
+    }
+
     _acessoAutorizado = autorizado;
 
-    // preenche os dados
     document.getElementById("acesso-placa").textContent = placa || "—";
     document.getElementById("acesso-veiculo").textContent = veiculo || "—";
     document.getElementById("acesso-morador").textContent = morador || "—";
     document.getElementById("acesso-endereco").textContent = endereco || "—";
     document.getElementById("acesso-status").textContent = status || "—";
 
-    // foto do carro — usa o último frame da câmera
     const imgCarro = document.getElementById("acesso-img-carro");
     const semFoto = document.getElementById("acesso-sem-foto");
     if (lastFrameBase64) {
@@ -455,29 +422,48 @@ function onPlacaDetectada(dados) {
       semFoto.style.display = "block";
     }
 
-    // câmera em tempo real
     const acessoCamera = document.getElementById("acesso-camera");
     if (lastFrameBase64) acessoCamera.src = lastFrameBase64;
 
-    // abre o modal
     abrirModal("modal-acesso");
+    iniciarCountdownAcesso(ACESSO_COUNTDOWN_SEGUNDOS);
+  } catch (e) {
+    console.warn("showAcessoModal error", e);
+  }
+}
 
-    // countdown só para autorizados
-    if (autorizado) {
-      iniciarCountdownAcesso(10);
-    } else {
-      document.getElementById("acesso-countdown").style.display = "none";
+function onPlacaDetectada(dados) {
+  try {
+    const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
+    const placa = obj.placa;
+    const autorizado = !!obj.autorizado;
+    const veiculo = obj.veiculo || "";
+    const morador = obj.morador || "";
+    const dataHora = obj.data_hora || new Date().toLocaleString();
+
+    if (autorizado && typeof window.showAcessoModal === "function") {
+      window.showAcessoModal(obj);
     }
 
-    // atualiza tabela de acessos se estiver na tela de monitoramento
     const tabela = document.getElementById("tabela-acessos");
     if (tabela) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${placa}</td><td>${veiculo || "—"}</td><td>${morador || "—"}</td><td>${data_hora}</td>`;
+      tr.innerHTML = `<td>${placa}</td><td>${veiculo || "—"}</td><td>${morador || "—"}</td><td>${dataHora}</td>`;
       tabela.insertBefore(tr, tabela.firstChild);
+      while (tabela.children.length > 8) {
+        tabela.removeChild(tabela.lastChild);
+      }
     }
   } catch (e) {
     console.warn("onPlacaDetectada error", e);
+  }
+}
+
+async function enviarComandoAbertura(tempoSegundos = OPEN_COMMAND_DURATION) {
+  try {
+    await pywebview.api.enviar_comando_portao("OPEN", tempoSegundos);
+  } catch (e) {
+    console.warn("enviarComandoAbertura error", e);
   }
 }
 
@@ -495,18 +481,27 @@ function iniciarCountdownAcesso(segundos) {
     timer.textContent = restante;
     if (restante <= 0) {
       clearInterval(_acessoCountdownInterval);
+      _acessoCountdownInterval = null;
+      enviarComandoAbertura();
       fecharModal("modal-acesso");
     }
   }, 1000);
 }
 
 function cancelarAbertura() {
-  if (_acessoCountdownInterval) clearInterval(_acessoCountdownInterval);
+  if (_acessoCountdownInterval) {
+    clearInterval(_acessoCountdownInterval);
+    _acessoCountdownInterval = null;
+  }
   fecharModal("modal-acesso");
 }
 
 function adiantarAbertura() {
-  if (_acessoCountdownInterval) clearInterval(_acessoCountdownInterval);
+  if (_acessoCountdownInterval) {
+    clearInterval(_acessoCountdownInterval);
+    _acessoCountdownInterval = null;
+  }
+  enviarComandoAbertura();
   fecharModal("modal-acesso");
 }
 
