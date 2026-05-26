@@ -18,8 +18,6 @@
     <div id="modal-info" class="modal-overlay">
       <div class="modal-box" style="width: 450px">
         <h2 class="modal-titulo">Sobre o SEAV</h2>
-
-        <!-- PÁGINA 1 -->
         <div id="info-pagina-1">
           <p style="font-size: 0.9rem"><strong>Versão:</strong> 1.0</p>
           <p style="font-size: 0.9rem; margin-top: 8px">
@@ -33,8 +31,6 @@
             <li>Fábio Martel</li>
           </ul>
         </div>
-
-        <!-- PÁGINA 2 -->
         <div id="info-pagina-2" style="display: none">
           <p style="font-size: 0.9rem; font-weight: 700; color: #1e2d3d">
             Status do sistema:
@@ -75,7 +71,6 @@
             </a>
           </p>
         </div>
-
         <div
           class="modal-rodape"
           style="margin-top: 16px; justify-content: space-between"
@@ -157,6 +152,26 @@
             <span class="slider-thumb"></span>
           </label>
         </div>
+
+        <!-- Novo botão adicionado -->
+        <hr style="border: none; border-top: 1px solid #e0e0e0" />
+        <div style="display: flex; justify-content: center">
+          <button
+            onclick="abrirModalAjuste()"
+            style="
+              background: var(--cor-principal);
+              color: #fff;
+              border: none;
+              padding: 10px 28px;
+              border-radius: 8px;
+              font-size: 1rem;
+              cursor: pointer;
+              font-weight: 600;
+            "
+          >
+            Ajustar reconhecimento
+          </button>
+        </div>
         <div class="modal-rodape">
           <button class="btn-cancelar" onclick="fecharConfig()">
             Cancelar
@@ -187,7 +202,6 @@
             <option value="M">Masculino</option>
             <option value="F">Feminino</option>
           </select>
-
           <div class="modal-secao">Contato</div>
           <input
             id="add-celular"
@@ -195,7 +209,6 @@
             maxlength="15"
           />
           <input id="add-email" placeholder="Email" />
-
           <div class="modal-secao">Endereço</div>
           <input id="add-cep" placeholder="CEP (00000-000)" maxlength="9" />
           <input id="add-numero" placeholder="Número" />
@@ -203,7 +216,6 @@
           <input id="add-bairro" placeholder="Bairro" readonly />
           <input id="add-cidade" placeholder="Cidade" readonly />
           <input id="add-estado" placeholder="UF" readonly />
-
           <div class="modal-secao">Veículo</div>
           <input id="add-modelo" placeholder="Modelo" />
           <input id="add-cor" placeholder="Cor" />
@@ -239,7 +251,6 @@
             <option value="M">Masculino</option>
             <option value="F">Feminino</option>
           </select>
-
           <div class="modal-secao">Contato</div>
           <input
             id="upd-celular"
@@ -247,7 +258,6 @@
             maxlength="15"
           />
           <input id="upd-email" placeholder="Email" />
-
           <div class="modal-secao">Endereço</div>
           <input id="upd-cep" placeholder="CEP (00000-000)" maxlength="9" />
           <input id="upd-numero" placeholder="Número" />
@@ -255,7 +265,6 @@
           <input id="upd-bairro" placeholder="Bairro" />
           <input id="upd-cidade" placeholder="Cidade" />
           <input id="upd-estado" placeholder="UF" />
-
           <div class="modal-secao">Veículo</div>
           <input id="upd-modelo" placeholder="Modelo" />
           <input id="upd-cor" placeholder="Cor" />
@@ -281,6 +290,29 @@
           </button>
           <button style="background: #e74c3c" onclick="confirmarRemover()">
             Remover
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIRMAR HISTÓRICO -->
+    <div id="modal-confirmar-historico" class="modal-overlay">
+      <div class="modal-box" style="width: 400px; text-align: center">
+        <h2 class="modal-titulo">Confirmar exclusão</h2>
+        <p
+          style="font-size: 0.95rem; color: #1e2d3d"
+          id="msg-confirmar-hist"
+        ></p>
+        <div class="modal-rodape" style="justify-content: center">
+          <button class="btn-cancelar" onclick="fecharModalConfirmarHist()">
+            Cancelar
+          </button>
+          <button
+            style="background: #e74c3c"
+            id="btn-confirmar-hist"
+            onclick="executarExclusaoHist()"
+          >
+            Excluir
           </button>
         </div>
       </div>
@@ -334,11 +366,9 @@
           <div><strong>CPF:</strong> <span id="info-cpf"></span></div>
           <div><strong>Nascimento:</strong> <span id="info-data"></span></div>
           <div><strong>Sexo:</strong> <span id="info-sexo"></span></div>
-
           <div class="modal-secao">Contato</div>
           <div><strong>Celular:</strong> <span id="info-celular"></span></div>
           <div><strong>Email:</strong> <span id="info-email"></span></div>
-
           <div class="modal-secao">Endereço</div>
           <div><strong>Rua:</strong> <span id="info-rua"></span></div>
           <div><strong>Número:</strong> <span id="info-numero"></span></div>
@@ -346,7 +376,6 @@
           <div><strong>Cidade:</strong> <span id="info-cidade"></span></div>
           <div><strong>Estado:</strong> <span id="info-estado"></span></div>
           <div><strong>CEP:</strong> <span id="info-cep"></span></div>
-
           <div class="modal-secao">Veículo</div>
           <div><strong>Modelo:</strong> <span id="info-modelo"></span></div>
           <div><strong>Cor:</strong> <span id="info-cor"></span></div>
@@ -358,19 +387,102 @@
       </div>
     </div>
 
+    <!-- MODAL AJUSTE -->
+    <div id="modal-ajuste" class="modal-overlay">
+      <div
+        class="modal-box"
+        style="width: 750px; max-height: 90vh; overflow-y: auto"
+      >
+        <h2 class="modal-titulo">Ajustar reconhecimento</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <div
+            style="
+              position: relative;
+              background: #000;
+              border-radius: 12px;
+              overflow: hidden;
+              width: 100%;
+              height: 400px;
+            "
+          >
+            <img
+              id="camera-stream-modal"
+              src=""
+              alt=""
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+              "
+            />
+            <canvas
+              id="camera-canvas-modal"
+              style="position: absolute; left: 0; top: 0; pointer-events: auto"
+            ></canvas>
+          </div>
+          <div style="text-align: center; font-size: 0.9rem">
+            <span id="ocr-text" style="font-weight: 600">Nenhum resultado</span>
+            <br />
+            <span id="ocr-meta" style="color: #888"></span>
+          </div>
+        </div>
+        <div class="modal-rodape" style="justify-content: space-between">
+          <button class="btn-cancelar" onclick="fecharModalAjuste()">
+            Fechar
+          </button>
+          <button
+            onclick="
+              clearLocalROI();
+              try {
+                pywebview.api.limpar_roi();
+              } catch (e) {}
+              fecharModalAjuste();
+            "
+          >
+            Limpar ROI
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL INFO HISTÓRICO -->
+    <div id="modal-info-historico" class="modal-overlay">
+      <div class="modal-box" style="width: 500px">
+        <h2 class="modal-titulo">Detalhes do Acesso</h2>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 0.9rem;
+          "
+        >
+          <div><strong>Placa:</strong> <span id="hist-placa"></span></div>
+          <div><strong>Veículo:</strong> <span id="hist-veiculo"></span></div>
+          <div><strong>Morador:</strong> <span id="hist-morador"></span></div>
+          <div><strong>Endereço:</strong> <span id="hist-endereco"></span></div>
+          <div>
+            <strong>Data e hora:</strong> <span id="hist-datahora"></span>
+          </div>
+          <div><strong>Status:</strong> <span id="hist-status"></span></div>
+        </div>
+        <div class="modal-rodape">
+          <button onclick="fecharModal('modal-info-historico')">Fechar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL ACESSO -->
     <div id="modal-acesso" class="modal-overlay">
       <div class="modal-box" style="width: 650px">
-        <h2 class="modal-titulo" id="acesso-titulo">Tentativa de acesso</h2>
-
+        <h2 class="modal-titulo">Tentativa de acesso</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
-          <!-- FOTO DO MORADOR -->
           <div style="display: flex; flex-direction: column; gap: 8px">
             <span style="font-size: 0.85rem; font-weight: 600"
               >Foto do morador:</span
             >
             <div
-              id="acesso-foto-morador"
               style="
                 width: 100%;
                 height: 160px;
@@ -379,20 +491,16 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                overflow: hidden;
               "
             >
               <span style="color: #aaa; font-size: 0.85rem">Sem foto</span>
             </div>
           </div>
-
-          <!-- FOTO DO CARRO -->
           <div style="display: flex; flex-direction: column; gap: 8px">
             <span style="font-size: 0.85rem; font-weight: 600"
               >Foto do carro:</span
             >
             <div
-              id="acesso-foto-carro"
               style="
                 width: 100%;
                 height: 160px;
@@ -421,8 +529,6 @@
               >
             </div>
           </div>
-
-          <!-- CÂMERA -->
           <div style="display: flex; flex-direction: column; gap: 8px">
             <span style="font-size: 0.85rem; font-weight: 600">Câmera:</span>
             <div
@@ -437,12 +543,11 @@
               <img
                 id="acesso-camera"
                 src=""
+                alt=""
                 style="width: 100%; height: 100%; object-fit: cover"
               />
             </div>
           </div>
-
-          <!-- DADOS -->
           <div style="display: flex; flex-direction: column; gap: 8px">
             <span style="font-size: 0.85rem; font-weight: 600">Dados:</span>
             <div
@@ -480,8 +585,6 @@
             </div>
           </div>
         </div>
-
-        <!-- COUNTDOWN -->
         <div
           id="acesso-countdown"
           style="
@@ -493,9 +596,8 @@
             display: none;
           "
         >
-          Abertura em <span id="acesso-timer">10</span>...
+          Abertura em <span id="acesso-timer">5</span>...
         </div>
-
         <div class="modal-rodape" style="justify-content: center; gap: 16px">
           <button
             class="btn-cancelar"

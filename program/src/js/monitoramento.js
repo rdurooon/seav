@@ -1,9 +1,8 @@
 const CAMERA_TIMEOUT_MS = 5000;
 let cameraTimeoutId = null;
 let lastFrameBase64 = null;
-let automacaoAtiva = true;
-let manualAcessoAberto = false;
-const ACCESS_COMMAND_DURATION = 5;
+let automacaoAtiva = false;
+let portaoAberto = false;
 
 // Atualizar status do sistema
 function atualizarStatus() {
@@ -11,66 +10,6 @@ function atualizarStatus() {
     document.getElementById("status-sistema").textContent =
       `Status do sistema: ${status}`;
   });
-}
-
-function atualizarBotoesMonitoramento() {
-  const btnManual = document.getElementById("btn-abre-fecha");
-  if (btnManual) {
-    btnManual.textContent = manualAcessoAberto
-      ? "Fechar acesso"
-      : "Abrir/fechar acesso";
-  }
-
-  const btnAuto = document.getElementById("btn-automacao");
-  if (btnAuto) {
-    btnAuto.textContent = automacaoAtiva
-      ? "Automação: Ativada"
-      : "Automação: Desativada";
-  }
-}
-
-async function carregarEstadoAutomacao() {
-  try {
-    const valor = await window.pywebview.api.get_automacao();
-    automacaoAtiva = !!valor;
-  } catch (e) {
-    automacaoAtiva = true;
-  }
-  atualizarBotoesMonitoramento();
-}
-
-async function abrirFecharAcesso() {
-  const acao = manualAcessoAberto ? "CLOSE" : "OPEN";
-  try {
-    const enviado = await window.pywebview.api.enviar_comando_portao(
-      acao,
-      ACCESS_COMMAND_DURATION
-    );
-    if (enviado) {
-      manualAcessoAberto = !manualAcessoAberto;
-      atualizarBotoesMonitoramento();
-      alert(`${acao === "OPEN" ? "Abertura" : "Fechamento"} enviada com sucesso.`);
-    } else {
-      alert("Não foi possível enviar o comando. Verifique a conexão serial.");
-    }
-  } catch (e) {
-    console.warn("abrirFecharAcesso error", e);
-    alert("Erro ao enviar comando de abertura/fechamento.");
-  }
-}
-
-async function ativarDesativarAutomacao() {
-  automacaoAtiva = !automacaoAtiva;
-  try {
-    await window.pywebview.api.set_automacao(automacaoAtiva);
-  } catch (e) {
-    console.warn("ativarDesativarAutomacao error", e);
-  }
-  atualizarBotoesMonitoramento();
-}
-
-function atualizarEstadoAutomacao() {
-  atualizarBotoesMonitoramento();
 }
 
 function setCameraPlaceholder(visible) {
@@ -340,49 +279,6 @@ function setupROICanvas() {
 // Executa setup do canvas
 setupROICanvas();
 
-// --- Placa detectada handler ---
-function onPlacaDetectada(dados) {
-  try {
-    if (typeof window.showAcessoModal === "function") {
-      window.showAcessoModal(dados);
-    }
-
-    const panel = document.getElementById("placa-panel");
-    if (!panel) return;
-    const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
-    const placa = obj.placa;
-    const autorizado = !!obj.autorizado;
-    const veiculo = obj.veiculo || "";
-    const morador = obj.morador || "";
-    const dataHora = obj.data_hora || new Date().toLocaleString();
-
-    panel.style.display = "block";
-    panel.innerHTML = `<strong>${placa}</strong><br>${autorizado ? "Autorizado" : "Negado"}`;
-
-    const tabela = document.getElementById("tabela-acessos");
-    if (tabela) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${placa}</td>
-        <td>${veiculo || ""}</td>
-        <td>${morador || ""}</td>
-        <td>${dataHora}</td>
-      `;
-      tabela.insertBefore(tr, tabela.firstChild);
-      while (tabela.children.length > 8) {
-        tabela.removeChild(tabela.lastChild);
-      }
-    }
-
-    // esconder painel após 6s
-    setTimeout(() => {
-      panel.style.display = "none";
-    }, 6000);
-  } catch (e) {
-    console.warn("onPlacaDetectada error", e);
-  }
-}
-
 function carregarUltimosAcessos() {
   // Tenta buscar últimos acessos com retries para garantir disponibilidade do pywebview.api
   const maxAttempts = 10;
@@ -391,7 +287,11 @@ function carregarUltimosAcessos() {
   function tryLoad() {
     attempt++;
     try {
-      if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.get_ultimos_acessos) {
+      if (
+        !window.pywebview ||
+        !window.pywebview.api ||
+        !window.pywebview.api.get_ultimos_acessos
+      ) {
         if (attempt < maxAttempts) {
           setTimeout(tryLoad, 200);
         } else {
@@ -403,7 +303,10 @@ function carregarUltimosAcessos() {
       window.pywebview.api
         .get_ultimos_acessos()
         .then((dados) => {
-          console.log("carregarUltimosAcessos: received", dados && dados.length ? dados.length : 0);
+          console.log(
+            "carregarUltimosAcessos: received",
+            dados && dados.length ? dados.length : 0,
+          );
           renderizarTabelaAcessos(dados || []);
         })
         .catch((err) => {
@@ -449,6 +352,74 @@ function renderizarTabelaAcessos(dados) {
     tr.innerHTML = `<td></td><td></td><td></td><td></td>`;
     tbody.appendChild(tr);
   }
+}
+
+// ═══════════════════════════════════════
+// TOGGLE BOTÕES
+// ═══════════════════════════════════════
+function atualizarBotoesMonitoramento() {
+  const btnPortao = document.getElementById("btn-portao");
+  const btnAutomacao = document.getElementById("btn-automacao");
+
+  if (btnPortao) {
+    if (portaoAberto) {
+      btnPortao.textContent = "Fechar portão";
+      btnPortao.style.background = "#e74c3c";
+    } else {
+      btnPortao.textContent = "Abrir portão";
+      btnPortao.style.background = "#27ae60";
+    }
+  }
+
+  if (btnAutomacao) {
+    if (automacaoAtiva) {
+      btnAutomacao.textContent = "Desativar automação";
+      btnAutomacao.style.background = "#e74c3c";
+    } else {
+      btnAutomacao.textContent = "Ativar automação";
+      btnAutomacao.style.background = "#27ae60";
+    }
+  }
+}
+
+async function carregarEstadoAutomacao() {
+  try {
+    const valor = await window.pywebview.api.get_automacao();
+    automacaoAtiva = !!valor;
+  } catch (e) {
+    automacaoAtiva = true;
+  }
+  atualizarBotoesMonitoramento();
+}
+
+async function togglePortao() {
+  const comando = portaoAberto ? "CLOSE" : "OPEN";
+  try {
+    const enviado = await window.pywebview.api.enviar_comando_portao(
+      comando,
+      5,
+    );
+    if (enviado) {
+      portaoAberto = !portaoAberto;
+      atualizarBotoesMonitoramento();
+    } else {
+      alert("Não foi possível enviar o comando. Verifique a conexão serial.");
+    }
+  } catch (e) {
+    console.warn("togglePortao error", e);
+    alert("Erro ao enviar comando.");
+  }
+}
+
+async function toggleAutomacao() {
+  automacaoAtiva = !automacaoAtiva;
+  try {
+    await window.pywebview.api.set_automacao(automacaoAtiva);
+  } catch (e) {
+    console.warn("toggleAutomacao error", e);
+    automacaoAtiva = !automacaoAtiva; // reverte em caso de erro
+  }
+  atualizarBotoesMonitoramento();
 }
 
 // Inicializar

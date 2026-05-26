@@ -341,7 +341,7 @@ class Api:
             cursor.close()
             conexao.close()
 
-    # ---------------- LISTAR HISTÓRICO ----------------
+       # ---------------- LISTAR HISTÓRICO ----------------
     def listar_historico(self, data_inicio=None, data_fim=None, placa=None):
         conexao = self.conectar()
         cursor = conexao.cursor()
@@ -349,11 +349,12 @@ class Api:
         try:
             query = """
                 SELECT
+                    id,
                     placa,
                     veiculo,
                     morador,
                     endereco,
-                    DATE_FORMAT(data_hora, '%%d/%%m/%%Y %%H:%%i:%%s'),
+                     DATE_FORMAT(data_hora, '%d/%m/%Y %H:%i:%s'),
                     status
                 FROM historico
             """
@@ -381,6 +382,58 @@ class Api:
         except Exception as e:
             print(f"[DB] listar_historico error: {e}")
             return []
+        finally:
+            cursor.close()
+            conexao.close()
+
+    # ---------------- DELETAR LINHA HISTÓRICO ----------------
+    def deletar_historico_linha(self, placa, data_hora):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+        try:
+            cursor.execute("""
+                DELETE FROM historico
+                WHERE placa = %s AND DATE_FORMAT(data_hora, '%%d/%%m/%%Y %%H:%%i:%%s') = %s
+                LIMIT 1
+            """, (placa, data_hora))
+            conexao.commit()
+            return True
+        except Exception as e:
+            conexao.rollback()
+            print(f"[DB] deletar_historico_linha error: {e}")
+            return False
+        finally:
+            cursor.close()
+            conexao.close()
+
+    # ---------------- LIMPAR TODO O HISTÓRICO ----------------
+    def limpar_historico(self):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+        try:
+            cursor.execute("DELETE FROM historico")
+            conexao.commit()
+            return True
+        except Exception as e:
+            conexao.rollback()
+            print(f"[DB] limpar_historico error: {e}")
+            return False
+        finally:
+            cursor.close()
+            conexao.close()
+
+        # ---------------- DELETAR LINHA HISTÓRICO POR ID ----------------
+    def deletar_historico_linha_por_id(self, id_registro):
+        conexao = self.conectar()
+        cursor = conexao.cursor()
+        try:
+            cursor.execute("DELETE FROM historico WHERE id = %s", (id_registro,))
+            conexao.commit()
+            return True
+        except Exception as e:
+            conexao.rollback()
+            print(f"[DB] deletar_historico_linha_por_id error: {e}")
+            return False
         finally:
             cursor.close()
             conexao.close()

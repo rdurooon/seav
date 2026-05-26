@@ -151,19 +151,15 @@ async function autodetectarPorta() {
 // MODAL AJUSTE
 // ═══════════════════════════════════════
 function abrirModalAjuste() {
-  fecharConfig();
-  const modal = document.getElementById("modal-ajuste");
-  if (!modal) return;
-  modal.style.display = "flex";
+  fecharConfig(); // fecha configurações
+  abrirModal("modal-ajuste"); // usa o sistema padrão (classe .ativo)
   if (typeof setupModalCanvas === "function") {
-    setupModalCanvas();
+    setupModalCanvas(); // configura o canvas de ROI
   }
 }
 
 function fecharModalAjuste() {
-  const modal = document.getElementById("modal-ajuste");
-  if (!modal) return;
-  modal.style.display = "none";
+  fecharModal("modal-ajuste"); // fecha via sistema de classes
 }
 
 // ═══════════════════════════════════════
@@ -389,10 +385,10 @@ abrirInfo = function () {
 // ═══════════════════════════════════════
 // MODAL ACESSO
 // ═══════════════════════════════════════
-const ACESSO_COUNTDOWN_SEGUNDOS = 10;
+const ACESSO_COUNTDOWN_SEGUNDOS = 5;
 const OPEN_COMMAND_DURATION = 5;
 let _acessoCountdownInterval = null;
-let _acessoAutorizado = false;
+let _acessoPayloadAtual = null; // guarda os dados da placa detectada
 
 function showAcessoModal(dados) {
   try {
@@ -403,7 +399,8 @@ function showAcessoModal(dados) {
       return;
     }
 
-    _acessoAutorizado = autorizado;
+    // Salva payload para uso posterior
+    _acessoPayloadAtual = dados;
 
     document.getElementById("acesso-placa").textContent = placa || "—";
     document.getElementById("acesso-veiculo").textContent = veiculo || "—";
@@ -429,6 +426,70 @@ function showAcessoModal(dados) {
     iniciarCountdownAcesso(ACESSO_COUNTDOWN_SEGUNDOS);
   } catch (e) {
     console.warn("showAcessoModal error", e);
+  }
+}
+
+async function registrarAcessoNoHistorico(acao) {
+  if (!_acessoPayloadAtual) return;
+  const { placa, veiculo, morador, endereco, data_hora } = _acessoPayloadAtual;
+  const status = acao === "autorizar" ? "Autorizado" : "Negado";
+
+  // Converte data_hora para formato ISO (YYYY-MM-DD HH:MM:SS)
+  let dataISO = null;
+  if (data_hora) {
+    // Tenta extrair formato brasileiro (dd/mm/yyyy hh:mm:ss)
+    const match = data_hora.match(
+      /(\d{2})\/(\d{2})\/(\d{4}) (\d{2}:\d{2}:\d{2})/,
+    );
+    if (match) {
+      dataISO = `${match[3]}-${match[2]}-${match[1]} ${match[4]}`;
+    } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(data_hora)) {
+      dataISO = data_hora; // já está em ISO
+    } else {
+      // formato desconhecido, usa data atual como fallback
+      const agora = new Date();
+      dataISO =
+        agora.getFullYear() +
+        "-" +
+        String(agora.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(agora.getDate()).padStart(2, "0") +
+        " " +
+        String(agora.getHours()).padStart(2, "0") +
+        ":" +
+        String(agora.getMinutes()).padStart(2, "0") +
+        ":" +
+        String(agora.getSeconds()).padStart(2, "0");
+    }
+  } else {
+    const agora = new Date();
+    dataISO =
+      agora.getFullYear() +
+      "-" +
+      String(agora.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(agora.getDate()).padStart(2, "0") +
+      " " +
+      String(agora.getHours()).padStart(2, "0") +
+      ":" +
+      String(agora.getMinutes()).padStart(2, "0") +
+      ":" +
+      String(agora.getSeconds()).padStart(2, "0");
+  }
+
+  try {
+    await window.pywebview.api.registrar_acesso(
+      placa,
+      null,
+      acao === "autorizar",
+      veiculo,
+      morador,
+      endereco,
+      dataISO,
+      status,
+    );
+  } catch (e) {
+    console.warn("registrarAcessoNoHistorico error", e);
   }
 }
 
@@ -476,31 +537,34 @@ function iniciarCountdownAcesso(segundos) {
   timer.textContent = segundos;
 
   let restante = segundos;
-  _acessoCountdownInterval = setInterval(() => {
+  _acessoCountdownInterval = setInterval(async () => {
     restante--;
     timer.textContent = restante;
     if (restante <= 0) {
       clearInterval(_acessoCountdownInterval);
       _acessoCountdownInterval = null;
+      await registrarAcessoNoHistorico("autorizar");
       enviarComandoAbertura();
       fecharModal("modal-acesso");
     }
   }, 1000);
 }
 
-function cancelarAbertura() {
+async function cancelarAbertura() {
   if (_acessoCountdownInterval) {
     clearInterval(_acessoCountdownInterval);
     _acessoCountdownInterval = null;
   }
+  await registrarAcessoNoHistorico("negar");
   fecharModal("modal-acesso");
 }
 
-function adiantarAbertura() {
+async function adiantarAbertura() {
   if (_acessoCountdownInterval) {
     clearInterval(_acessoCountdownInterval);
     _acessoCountdownInterval = null;
   }
+  await registrarAcessoNoHistorico("autorizar");
   enviarComandoAbertura();
   fecharModal("modal-acesso");
 }
@@ -510,10 +574,6 @@ function adiantarAbertura() {
 // ═══════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
   navegarPara("menu");
-});
-
-document.addEventListener("click", (e) => {
-  if (e.target && e.target.id === "modal-close") fecharModalAjuste();
 });
 
 setInterval(atualizarStatus, 2000);

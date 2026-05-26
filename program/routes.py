@@ -195,8 +195,7 @@ class API:
                 pass
         except Exception:
             pass
-
-    # Expor controle de ROI para frontend
+        
     def set_roi(self, x, y, w, h):
         try:
             if self.serial_reader and getattr(self.serial_reader, '_alpr', None):
@@ -236,7 +235,44 @@ class API:
 
     def registrar_acesso(self, placa, id_morador=None, autorizado=False, veiculo=None, morador=None, endereco=None, data_hora=None, status=None):
         try:
-            return self.db.registrar_acesso(placa, id_morador, autorizado, veiculo, morador, endereco, data_hora, status)
+            # Converter data_hora para formato ISO (YYYY-MM-DD HH:MM:SS) se necessário
+            if data_hora:
+                # Tenta formato ISO primeiro
+                try:
+                    datetime.strptime(data_hora, "%Y-%m-%d %H:%M:%S")
+                    # já está correto
+                except ValueError:
+                    # Tenta formato brasileiro (DD/MM/YYYY HH:MM:SS)
+                    try:
+                        dt = datetime.strptime(data_hora, "%d/%m/%Y %H:%M:%S")
+                        data_hora = dt.strftime("%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        # Se não conseguir, deixa como None para o banco usar NOW()
+                        data_hora = None
+            else:
+                data_hora = None
+
+            # Salvar no banco
+            resultado = self.db.registrar_acesso(placa, id_morador, autorizado, veiculo, morador, endereco, data_hora, status)
+            if resultado:
+                # Formatar data_hora para exibição no buffer (DD/MM/YYYY HH:MM:SS)
+                if data_hora:
+                    try:
+                        dt = datetime.strptime(data_hora, "%Y-%m-%d %H:%M:%S")
+                        data_hora_display = dt.strftime("%d/%m/%Y %H:%M:%S")
+                    except:
+                        # fallback: usar a string original
+                        data_hora_display = data_hora
+                else:
+                    data_hora_display = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                
+                self._adicionar_ultimo_acesso([
+                    placa,
+                    veiculo or "",
+                    morador or "",
+                    data_hora_display
+                ])
+            return resultado
         except Exception:
             return False
 
@@ -259,7 +295,6 @@ class API:
             return False
 
     def _processar_placa_nao_cadastrada(self, placa_text):
-        # placeholder: não faz nada para placas não cadastradas
         return
 
     def connect_serial(self, port):
@@ -326,3 +361,21 @@ class API:
         for porta in portas:
             portas_disponiveis.append(porta.device)
         return portas_disponiveis
+
+    def deletar_historico_linha(self, placa, data_hora):
+        try:
+            return self.db.deletar_historico_linha(placa, data_hora)
+        except Exception:
+            return False
+
+    def limpar_historico(self):
+        try:
+            return self.db.limpar_historico()
+        except Exception:
+            return False
+    
+    def deletar_historico_linha_por_id(self, id_registro):
+        try:
+            return self.db.deletar_historico_linha_por_id(id_registro)
+        except Exception:
+            return False

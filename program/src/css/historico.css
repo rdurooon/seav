@@ -73,3 +73,17 @@
 .historico-tabela tbody tr td:empty {
   border-color: transparent;
 }
+
+.btn-lixeira {
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
+  display: inline-block;
+  opacity: 0.7;
+}
+.btn-lixeira:hover {
+  transform: scale(1.2);
+  opacity: 1;
+}

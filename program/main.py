@@ -20,7 +20,6 @@ x_pos, y_pos = center_screen(largura, altura)
 
 if __name__ == '__main__':
     api = API()
-
     window = webview.create_window(
         'SEAV - Sistema Embarcado de Acesso Veicular',
         url=index_inicial,
