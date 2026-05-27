@@ -1,16 +1,63 @@
+"""
+SEAV - Sistema de Banco de Dados
+================================
+
+Este módulo gerencia a conexão com o banco de dados MySQL.
+As credenciais são carregadas de um arquivo 'credencials.key' (não versionado no Git).
+
+Como funciona:
+1. Ao inicializar a classe Api(), verifica se 'credencials.key' existe
+2. Se não existir, cria automaticamente com um template
+3. Carrega as credenciais do arquivo para conexões seguras
+
+Segurança:
+- O arquivo 'credencials.key' é ignorado pelo Git (.gitignore)
+- Nunca commit credenciais de verdade neste arquivo
+"""
+
 import mysql.connector
+import json
+import os
+from pathlib import Path
 
 class Api:
 
-    def conectar(self):
+    def __init__(self):
+        self._credentials_path = str(Path(__file__).parent / "credencials.key")
+        self._load_credentials()
 
-     return mysql.connector.connect(
-        host="",
-        port=3306,
-        user="",
-        password="",
-        database=""
-    )
+    def _load_credentials(self):
+        """Carrega ou cria o arquivo de credenciais"""
+        if not Path(self._credentials_path).exists():
+            self._create_credentials_file()
+        
+        with open(self._credentials_path, 'r', encoding='utf-8') as f:
+            self.credentials = json.load(f)
+
+    def _create_credentials_file(self):
+        """Cria o arquivo de credenciais com um template vazio"""
+        template = {
+            "host": "",
+            "port": 3306,
+            "user": "",
+            "password": "",
+            "database": ""
+        }
+        
+        with open(self._credentials_path, 'w', encoding='utf-8') as f:
+            json.dump(template, f, indent=4, ensure_ascii=False)
+        
+        print(f"Arquivo de credenciais criado em: {self._credentials_path}")
+        print("⚠️  IMPORTANTE: Atualize o arquivo com suas credenciais reais!")
+
+    def conectar(self):
+        return mysql.connector.connect(
+            host=self.credentials["host"],
+            port=self.credentials["port"],
+            user=self.credentials["user"],
+            password=self.credentials["password"],
+            database=self.credentials["database"]
+        )
 
     # ---------------- CREATE ----------------
     def cadastrar_completo(self, dados):
