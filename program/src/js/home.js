@@ -151,15 +151,15 @@ async function autodetectarPorta() {
 // MODAL AJUSTE
 // ═══════════════════════════════════════
 function abrirModalAjuste() {
-  fecharConfig(); // fecha configurações
-  abrirModal("modal-ajuste"); // usa o sistema padrão (classe .ativo)
+  fecharConfig();
+  abrirModal("modal-ajuste");
   if (typeof setupModalCanvas === "function") {
-    setupModalCanvas(); // configura o canvas de ROI
+    setupModalCanvas();
   }
 }
 
 function fecharModalAjuste() {
-  fecharModal("modal-ajuste"); // fecha via sistema de classes
+  fecharModal("modal-ajuste");
 }
 
 // ═══════════════════════════════════════
@@ -388,44 +388,56 @@ abrirInfo = function () {
 const ACESSO_COUNTDOWN_SEGUNDOS = 5;
 const OPEN_COMMAND_DURATION = 5;
 let _acessoCountdownInterval = null;
-let _acessoPayloadAtual = null; // guarda os dados da placa detectada
+let _acessoPayloadAtual = null;
+let _modalAcessoAberto = false;
 
 function showAcessoModal(dados) {
+  if (_modalAcessoAberto) {
+    console.log("Modal já aberto, ignorando nova detecção.");
+    return;
+  }
   try {
     const { placa, autorizado, veiculo, morador, endereco, status, data_hora } =
       dados;
 
-    if (!autorizado) {
-      return;
-    }
-
-    // Salva payload para uso posterior
     _acessoPayloadAtual = dados;
+    _modalAcessoAberto = true;
 
-    document.getElementById("acesso-placa").textContent = placa || "—";
-    document.getElementById("acesso-veiculo").textContent = veiculo || "—";
-    document.getElementById("acesso-morador").textContent = morador || "—";
-    document.getElementById("acesso-endereco").textContent = endereco || "—";
-    document.getElementById("acesso-status").textContent = status || "—";
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value || "—";
+    };
+
+    setText("acesso-placa", placa);
+    setText("acesso-veiculo", veiculo);
+    setText("acesso-morador", morador);
+    setText("acesso-endereco", endereco);
+    setText("acesso-contato", dados.contato);
+    setText("acesso-status", status);
 
     const imgCarro = document.getElementById("acesso-img-carro");
     const semFoto = document.getElementById("acesso-sem-foto");
-    if (lastFrameBase64) {
-      imgCarro.src = lastFrameBase64;
-      imgCarro.style.display = "block";
-      semFoto.style.display = "none";
-    } else {
-      imgCarro.style.display = "none";
-      semFoto.style.display = "block";
+    if (imgCarro && semFoto) {
+      if (lastFrameBase64) {
+        imgCarro.src = lastFrameBase64;
+        imgCarro.style.display = "block";
+        semFoto.style.display = "none";
+      } else {
+        imgCarro.style.display = "none";
+        semFoto.style.display = "block";
+      }
     }
 
     const acessoCamera = document.getElementById("acesso-camera");
-    if (lastFrameBase64) acessoCamera.src = lastFrameBase64;
+    if (acessoCamera && lastFrameBase64) {
+      acessoCamera.src = lastFrameBase64;
+    }
 
     abrirModal("modal-acesso");
     iniciarCountdownAcesso(ACESSO_COUNTDOWN_SEGUNDOS);
   } catch (e) {
     console.warn("showAcessoModal error", e);
+    _modalAcessoAberto = false;
   }
 }
 
@@ -434,19 +446,16 @@ async function registrarAcessoNoHistorico(acao) {
   const { placa, veiculo, morador, endereco, data_hora } = _acessoPayloadAtual;
   const status = acao === "autorizar" ? "Autorizado" : "Negado";
 
-  // Converte data_hora para formato ISO (YYYY-MM-DD HH:MM:SS)
   let dataISO = null;
   if (data_hora) {
-    // Tenta extrair formato brasileiro (dd/mm/yyyy hh:mm:ss)
     const match = data_hora.match(
       /(\d{2})\/(\d{2})\/(\d{4}) (\d{2}:\d{2}:\d{2})/,
     );
     if (match) {
       dataISO = `${match[3]}-${match[2]}-${match[1]} ${match[4]}`;
     } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(data_hora)) {
-      dataISO = data_hora; // já está em ISO
+      dataISO = data_hora;
     } else {
-      // formato desconhecido, usa data atual como fallback
       const agora = new Date();
       dataISO =
         agora.getFullYear() +
@@ -478,7 +487,7 @@ async function registrarAcessoNoHistorico(acao) {
   }
 
   try {
-    await window.pywebview.api.registrar_acesso(
+    const resultado = await window.pywebview.api.registrar_acesso(
       placa,
       null,
       acao === "autorizar",
@@ -488,8 +497,10 @@ async function registrarAcessoNoHistorico(acao) {
       dataISO,
       status,
     );
+    return resultado;
   } catch (e) {
     console.warn("registrarAcessoNoHistorico error", e);
+    return false;
   }
 }
 
@@ -502,7 +513,7 @@ function onPlacaDetectada(dados) {
     const morador = obj.morador || "";
     const dataHora = obj.data_hora || new Date().toLocaleString();
 
-    if (autorizado && typeof window.showAcessoModal === "function") {
+    if (typeof window.showAcessoModal === "function") {
       window.showAcessoModal(obj);
     }
 
@@ -544,8 +555,9 @@ function iniciarCountdownAcesso(segundos) {
       clearInterval(_acessoCountdownInterval);
       _acessoCountdownInterval = null;
       await registrarAcessoNoHistorico("autorizar");
-      enviarComandoAbertura();
+      _modalAcessoAberto = false;
       fecharModal("modal-acesso");
+      enviarComandoAbertura();
     }
   }, 1000);
 }
@@ -556,6 +568,7 @@ async function cancelarAbertura() {
     _acessoCountdownInterval = null;
   }
   await registrarAcessoNoHistorico("negar");
+  _modalAcessoAberto = false;
   fecharModal("modal-acesso");
 }
 
@@ -565,8 +578,9 @@ async function adiantarAbertura() {
     _acessoCountdownInterval = null;
   }
   await registrarAcessoNoHistorico("autorizar");
-  enviarComandoAbertura();
+  _modalAcessoAberto = false;
   fecharModal("modal-acesso");
+  enviarComandoAbertura();
 }
 
 // ═══════════════════════════════════════

@@ -350,6 +350,7 @@ class Api:
 
     # ---------------- REGISTRAR ACESSO ----------------
     def registrar_acesso(self, placa, id_morador=None, autorizado=False, veiculo=None, morador=None, endereco=None, data_hora=None, status=None):
+        print(f"[DB] registrar_acesso chamado: placa={placa}, veiculo={veiculo}, morador={morador}, endereco={endereco}, data_hora={data_hora}, status={status}, id_morador={id_morador}")
         conexao = self.conectar()
         cursor = conexao.cursor()
 
@@ -379,6 +380,7 @@ class Api:
                 """, (placa, veiculo, morador, endereco, status, id_morador))
 
             conexao.commit()
+            print("[DB] registrar_acesso sucesso")
             return True
         except Exception as e:
             conexao.rollback()
@@ -388,7 +390,7 @@ class Api:
             cursor.close()
             conexao.close()
 
-       # ---------------- LISTAR HISTÓRICO ----------------
+    # ---------------- LISTAR HISTÓRICO ----------------
     def listar_historico(self, data_inicio=None, data_fim=None, placa=None):
         conexao = self.conectar()
         cursor = conexao.cursor()
@@ -469,7 +471,7 @@ class Api:
             cursor.close()
             conexao.close()
 
-        # ---------------- DELETAR LINHA HISTÓRICO POR ID ----------------
+    # ---------------- DELETAR LINHA HISTÓRICO POR ID ----------------
     def deletar_historico_linha_por_id(self, id_registro):
         conexao = self.conectar()
         cursor = conexao.cursor()

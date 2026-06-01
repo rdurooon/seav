@@ -1,10 +1,10 @@
-const CAMERA_TIMEOUT_MS = 5000;
-let cameraTimeoutId = null;
-let lastFrameBase64 = null;
-let automacaoAtiva = false;
-let portaoAberto = false;
+if (typeof automacaoAtiva === "undefined") {
+  var automacaoAtiva = false;
+}
+if (typeof portaoAberto === "undefined") {
+  var portaoAberto = false;
+}
 
-// Atualizar status do sistema
 function atualizarStatus() {
   pywebview.api.get_status().then((status) => {
     document.getElementById("status-sistema").textContent =
@@ -33,36 +33,33 @@ function setBackgroundImage(base64Data) {
 }
 
 function resetCameraTimeout() {
-  if (cameraTimeoutId) {
-    clearTimeout(cameraTimeoutId);
+  if (window.cameraTimeoutId) {
+    clearTimeout(window.cameraTimeoutId);
   }
-  cameraTimeoutId = setTimeout(() => {
+  window.cameraTimeoutId = setTimeout(() => {
     setCameraPlaceholder(true);
-    if (lastFrameBase64) {
-      setBackgroundImage(lastFrameBase64);
+    if (window.lastFrameBase64) {
+      setBackgroundImage(window.lastFrameBase64);
     }
-  }, CAMERA_TIMEOUT_MS);
+  }, window.CAMERA_TIMEOUT_MS || 5000);
 }
 
-// Atualizar stream da câmera
 function updateCameraStream(base64Data) {
   const stream = document.getElementById("camera-stream");
   if (!stream) return;
-  lastFrameBase64 = base64Data;
+  window.lastFrameBase64 = base64Data;
   stream.src = base64Data;
   stream.style.backgroundImage = "none";
   setCameraPlaceholder(false);
   resetCameraTimeout();
 }
 
-// Atualiza também o stream do modal (se aberto)
 function _updateModalStream(base64Data) {
   const stream = document.getElementById("camera-stream-modal");
   if (!stream) return;
   stream.src = base64Data;
 }
 
-// alterar updateCameraStream para também atualizar modal
 const _origUpdateCameraStream = updateCameraStream;
 updateCameraStream = function (base64Data, recognitionBase64 = null) {
   _origUpdateCameraStream(base64Data, recognitionBase64);
@@ -71,13 +68,11 @@ updateCameraStream = function (base64Data, recognitionBase64 = null) {
   } catch (e) {}
 };
 
-// --- Modal Ajuste ---
 function abrirModalAjuste() {
   fecharConfig();
   const modal = document.getElementById("modal-ajuste");
   if (!modal) return;
   modal.style.display = "flex";
-  // configurar canvas modal
   setupModalCanvas();
 }
 
@@ -174,7 +169,6 @@ function setupModalCanvas() {
   };
 }
 
-// Recebe atualizações rápidas de OCR para exibição no modal
 function onOcrUpdate(dados) {
   try {
     const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
@@ -194,7 +188,6 @@ function onOcrUpdate(dados) {
   }
 }
 
-// --- ROI canvas handling ---
 function setupROICanvas() {
   const img = document.getElementById("camera-stream");
   const canvas = document.getElementById("camera-canvas");
@@ -276,11 +269,9 @@ function setupROICanvas() {
   });
 }
 
-// Executa setup do canvas
 setupROICanvas();
 
 function carregarUltimosAcessos() {
-  // Tenta buscar últimos acessos com retries para garantir disponibilidade do pywebview.api
   const maxAttempts = 10;
   let attempt = 0;
 
@@ -303,10 +294,6 @@ function carregarUltimosAcessos() {
       window.pywebview.api
         .get_ultimos_acessos()
         .then((dados) => {
-          console.log(
-            "carregarUltimosAcessos: received",
-            dados && dados.length ? dados.length : 0,
-          );
           renderizarTabelaAcessos(dados || []);
         })
         .catch((err) => {
@@ -354,9 +341,6 @@ function renderizarTabelaAcessos(dados) {
   }
 }
 
-// ═══════════════════════════════════════
-// TOGGLE BOTÕES
-// ═══════════════════════════════════════
 function atualizarBotoesMonitoramento() {
   const btnPortao = document.getElementById("btn-portao");
   const btnAutomacao = document.getElementById("btn-automacao");
@@ -417,12 +401,11 @@ async function toggleAutomacao() {
     await window.pywebview.api.set_automacao(automacaoAtiva);
   } catch (e) {
     console.warn("toggleAutomacao error", e);
-    automacaoAtiva = !automacaoAtiva; // reverte em caso de erro
+    automacaoAtiva = !automacaoAtiva;
   }
   atualizarBotoesMonitoramento();
 }
 
-// Inicializar
 setCameraPlaceholder(true);
 atualizarStatus();
 carregarUltimosAcessos();

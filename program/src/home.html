@@ -473,140 +473,117 @@
       </div>
     </div>
 
-    <!-- MODAL ACESSO -->
+    <!-- MODAL ACESSO (NOVO LAYOUT) -->
     <div id="modal-acesso" class="modal-overlay">
-      <div class="modal-box" style="width: 650px">
-        <h2 class="modal-titulo">Tentativa de acesso</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 0.85rem; font-weight: 600"
-              >Foto do morador:</span
-            >
-            <div
-              style="
-                width: 100%;
-                height: 160px;
-                background: #e8ecf0;
-                border-radius: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              "
-            >
-              <span style="color: #aaa; font-size: 0.85rem">Sem foto</span>
+      <div class="modal-box" style="width: 450px; padding: 0">
+        <h2 class="modal-titulo-acesso">Tentativa de acesso</h2>
+
+        <div class="acesso-conteudo">
+          <!-- Coluna Esquerda -->
+          <div class="acesso-coluna-esquerda">
+            <!-- Foto do morador -->
+            <div class="acesso-bloco">
+              <span class="acesso-label">Foto do morador</span>
+              <div class="acesso-img-box acesso-placeholder-pessoa">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 48 48"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle cx="24" cy="16" r="8" fill="#8BA3B5" />
+                  <path
+                    d="M12 40C12 30.058 17.373 24 24 24C30.627 24 36 30.058 36 40"
+                    fill="#8BA3B5"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Câmera -->
+            <div class="acesso-bloco">
+              <span class="acesso-label">Câmera</span>
+              <div class="acesso-img-box acesso-camera-box">
+                <img
+                  id="acesso-camera"
+                  src=""
+                  alt=""
+                  style="width: 100%; height: 100%; object-fit: cover"
+                />
+              </div>
             </div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 0.85rem; font-weight: 600"
-              >Foto do carro:</span
-            >
-            <div
-              style="
-                width: 100%;
-                height: 160px;
-                background: #e8ecf0;
-                border-radius: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-              "
-            >
-              <img
-                id="acesso-img-carro"
-                src=""
-                alt=""
-                style="
-                  width: 100%;
-                  height: 100%;
-                  object-fit: cover;
-                  display: none;
-                  border-radius: 12px;
-                "
-              />
-              <span id="acesso-sem-foto" style="color: #aaa; font-size: 0.85rem"
-                >Sem foto</span
-              >
+
+          <!-- Coluna Direita -->
+          <div class="acesso-coluna-direita">
+            <!-- Foto do carro -->
+            <div class="acesso-bloco">
+              <span class="acesso-label">Foto do carro</span>
+              <div class="acesso-img-box acesso-carro-box">
+                <img
+                  id="acesso-img-carro"
+                  src=""
+                  alt=""
+                  style="
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: none;
+                  "
+                />
+                <span id="acesso-sem-foto" class="acesso-sem-foto"
+                  >Sem foto</span
+                >
+              </div>
             </div>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 0.85rem; font-weight: 600">Câmera:</span>
-            <div
-              style="
-                width: 100%;
-                height: 160px;
-                background: #000;
-                border-radius: 12px;
-                overflow: hidden;
-              "
-            >
-              <img
-                id="acesso-camera"
-                src=""
-                alt=""
-                style="width: 100%; height: 100%; object-fit: cover"
-              />
-            </div>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 0.85rem; font-weight: 600">Dados:</span>
-            <div
-              style="
-                border: 2px solid var(--cor-borda);
-                border-radius: 12px;
-                padding: 12px;
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                font-size: 0.85rem;
-                height: 160px;
-                justify-content: center;
-              "
-            >
-              <span
-                ><strong>Placa:</strong> <span id="acesso-placa">—</span></span
-              >
-              <span
-                ><strong>Veículo:</strong>
-                <span id="acesso-veiculo">—</span></span
-              >
-              <span
-                ><strong>Morador:</strong>
-                <span id="acesso-morador">—</span></span
-              >
-              <span
-                ><strong>Endereço:</strong>
-                <span id="acesso-endereco">—</span></span
-              >
-              <span
-                ><strong>Status:</strong>
-                <span id="acesso-status">—</span></span
-              >
+
+            <!-- Dados -->
+            <div class="acesso-bloco">
+              <span class="acesso-label">Dados:</span>
+              <div class="acesso-dados-caixa">
+                <div>
+                  <strong>Placa:</strong> <span id="acesso-placa">—</span>
+                </div>
+                <div>
+                  <strong>Veículo:</strong> <span id="acesso-veiculo">—</span>
+                </div>
+                <div>
+                  <strong>Morador:</strong> <span id="acesso-morador">—</span>
+                </div>
+                <div>
+                  <strong>Endereço:</strong> <span id="acesso-endereco">—</span>
+                </div>
+                <div>
+                  <strong>Contato:</strong> <span id="acesso-contato">—</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- Countdown -->
         <div
           id="acesso-countdown"
           style="
-            text-align: center;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1e2d3d;
-            margin-top: 8px;
             display: none;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            margin: 12px 0 8px;
           "
         >
           Abertura em <span id="acesso-timer">5</span>...
         </div>
-        <div class="modal-rodape" style="justify-content: center; gap: 16px">
-          <button
-            class="btn-cancelar"
-            style="background: #e74c3c !important; color: #fff !important"
-            onclick="cancelarAbertura()"
-          >
+
+        <!-- Botões -->
+        <div class="acesso-botoes">
+          <button id="btn-cancelar-acesso" onclick="cancelarAbertura()">
             Cancelar abertura
           </button>
-          <button onclick="adiantarAbertura()">Adiantar abertura</button>
+          <button id="btn-adiantar-acesso" onclick="adiantarAbertura()">
+            Adiantar abertura
+          </button>
         </div>
       </div>
     </div>

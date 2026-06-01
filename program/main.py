@@ -32,4 +32,4 @@ if __name__ == '__main__':
     )
 
     api.set_window(window)
-    webview.start(debug=False)
+    webview.start(debug=True)

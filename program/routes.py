@@ -126,9 +126,7 @@ class API:
         try:
             resultado = self.db.buscar_veiculo_por_placa(placa_text)
             autorizado = bool(resultado)
-            # data/hora para exibição e para salvar no banco (ISO)
             data_hora_display = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-            data_hora_db = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             if autorizado:
                 try:
@@ -153,30 +151,7 @@ class API:
                 endereco = ""
                 status = "Negado"
 
-            # manter histórico em memória (persistente apenas até o fim do processo)
-            self._adicionar_ultimo_acesso([
-                placa_text,
-                veiculo,
-                morador,
-                data_hora_display,
-            ])
-
-            # salvar no banco usando timestamp ISO (YYYY-MM-DD HH:MM:SS)
-            try:
-                saved = self.db.registrar_acesso(
-                    placa_text,
-                    id_morador,
-                    autorizado,
-                    veiculo,
-                    morador,
-                    endereco,
-                    data_hora_db,
-                    status,
-                )
-                if not saved:
-                    print(f"[API] registrar_acesso falhou para {placa_text}")
-            except Exception as e:
-                print(f"[API] registrar_acesso exception: {e}")
+            # NÃO registra mais aqui – o frontend cuidará disso após decisão do operador
 
             payload = {
                 "placa": placa_text,
@@ -235,33 +210,26 @@ class API:
 
     def registrar_acesso(self, placa, id_morador=None, autorizado=False, veiculo=None, morador=None, endereco=None, data_hora=None, status=None):
         try:
-            # Converter data_hora para formato ISO (YYYY-MM-DD HH:MM:SS) se necessário
+            print(f"[API] registrar_acesso recebido: placa={placa}, data_hora={data_hora}, status={status}")
             if data_hora:
-                # Tenta formato ISO primeiro
                 try:
                     datetime.strptime(data_hora, "%Y-%m-%d %H:%M:%S")
-                    # já está correto
                 except ValueError:
-                    # Tenta formato brasileiro (DD/MM/YYYY HH:MM:SS)
                     try:
                         dt = datetime.strptime(data_hora, "%d/%m/%Y %H:%M:%S")
                         data_hora = dt.strftime("%Y-%m-%d %H:%M:%S")
                     except ValueError:
-                        # Se não conseguir, deixa como None para o banco usar NOW()
                         data_hora = None
             else:
                 data_hora = None
 
-            # Salvar no banco
             resultado = self.db.registrar_acesso(placa, id_morador, autorizado, veiculo, morador, endereco, data_hora, status)
             if resultado:
-                # Formatar data_hora para exibição no buffer (DD/MM/YYYY HH:MM:SS)
                 if data_hora:
                     try:
                         dt = datetime.strptime(data_hora, "%Y-%m-%d %H:%M:%S")
                         data_hora_display = dt.strftime("%d/%m/%Y %H:%M:%S")
                     except:
-                        # fallback: usar a string original
                         data_hora_display = data_hora
                 else:
                     data_hora_display = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -273,7 +241,8 @@ class API:
                     data_hora_display
                 ])
             return resultado
-        except Exception:
+        except Exception as e:
+            print(f"[API] registrar_acesso EXCEPTION: {e}")
             return False
 
     def listar_historico(self, data_inicio=None, data_fim=None, placa=None):
