@@ -1,3 +1,14 @@
+/**
+ * Monitoramento – Câmera, Últimos Acessos, Botões e Ajustes
+ *
+ * Este módulo é injetado dinamicamente ao abrir a tela de monitoramento.
+ * As variáveis globais `automacaoAtiva` e `portaoAberto` são compartilhadas
+ * com o home.js e inicializadas aqui com var caso ainda não existam.
+ */
+
+// ---------------------------------------------------------------
+// 1. Variáveis de estado (compartilhadas globalmente)
+// ---------------------------------------------------------------
 if (typeof automacaoAtiva === "undefined") {
   var automacaoAtiva = false;
 }
@@ -5,24 +16,27 @@ if (typeof portaoAberto === "undefined") {
   var portaoAberto = false;
 }
 
+// ---------------------------------------------------------------
+// 2. Funções de status e câmera
+// ---------------------------------------------------------------
 function atualizarStatus() {
-  pywebview.api.get_status().then((status) => {
+  pywebview.api.get_status().then(function (status) {
     document.getElementById("status-sistema").textContent =
-      `Status do sistema: ${status}`;
+      "Status do sistema: " + status;
   });
 }
 
 function setCameraPlaceholder(visible) {
-  const placeholder = document.getElementById("camera-placeholder");
+  var placeholder = document.getElementById("camera-placeholder");
   if (!placeholder) return;
   placeholder.classList.toggle("hidden", !visible);
 }
 
 function setBackgroundImage(base64Data) {
-  const stream = document.getElementById("camera-stream");
+  var stream = document.getElementById("camera-stream");
   if (!stream) return;
   if (base64Data) {
-    stream.style.backgroundImage = `url('${base64Data}')`;
+    stream.style.backgroundImage = "url('" + base64Data + "')";
     stream.style.backgroundSize = "cover";
     stream.style.backgroundPosition = "center";
     stream.src = "";
@@ -36,7 +50,7 @@ function resetCameraTimeout() {
   if (window.cameraTimeoutId) {
     clearTimeout(window.cameraTimeoutId);
   }
-  window.cameraTimeoutId = setTimeout(() => {
+  window.cameraTimeoutId = setTimeout(function () {
     setCameraPlaceholder(true);
     if (window.lastFrameBase64) {
       setBackgroundImage(window.lastFrameBase64);
@@ -44,8 +58,9 @@ function resetCameraTimeout() {
   }, window.CAMERA_TIMEOUT_MS || 5000);
 }
 
+// Função original (será estendida abaixo)
 function updateCameraStream(base64Data) {
-  const stream = document.getElementById("camera-stream");
+  var stream = document.getElementById("camera-stream");
   if (!stream) return;
   window.lastFrameBase64 = base64Data;
   stream.src = base64Data;
@@ -54,43 +69,48 @@ function updateCameraStream(base64Data) {
   resetCameraTimeout();
 }
 
-function _updateModalStream(base64Data) {
-  const stream = document.getElementById("camera-stream-modal");
-  if (!stream) return;
-  stream.src = base64Data;
+// Atualiza também o modal de ajuste
+function updateModalStream(base64Data) {
+  var stream = document.getElementById("camera-stream-modal");
+  if (stream) {
+    stream.src = base64Data;
+  }
 }
 
-const _origUpdateCameraStream = updateCameraStream;
-updateCameraStream = function (base64Data, recognitionBase64 = null) {
-  _origUpdateCameraStream(base64Data, recognitionBase64);
+// Estende updateCameraStream para também alimentar o modal
+var originalUpdateCameraStream = updateCameraStream;
+updateCameraStream = function (base64Data, recognitionBase64) {
+  originalUpdateCameraStream(base64Data, recognitionBase64);
   try {
-    _updateModalStream(recognitionBase64 || base64Data);
+    updateModalStream(recognitionBase64 || base64Data);
   } catch (e) {}
 };
 
+// ---------------------------------------------------------------
+// 3. Modal de Ajuste (ROI)
+// ---------------------------------------------------------------
 function abrirModalAjuste() {
   fecharConfig();
-  const modal = document.getElementById("modal-ajuste");
+  var modal = document.getElementById("modal-ajuste");
   if (!modal) return;
   modal.style.display = "flex";
   setupModalCanvas();
 }
 
 function fecharModalAjuste() {
-  const modal = document.getElementById("modal-ajuste");
-  if (!modal) return;
-  modal.style.display = "none";
+  var modal = document.getElementById("modal-ajuste");
+  if (modal) modal.style.display = "none";
 }
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click", function (e) {
   if (e.target && e.target.id === "modal-close") {
     fecharModalAjuste();
   }
 });
 
 function setupModalCanvas() {
-  const img = document.getElementById("camera-stream-modal");
-  const canvas = document.getElementById("camera-canvas-modal");
+  var img = document.getElementById("camera-stream-modal");
+  var canvas = document.getElementById("camera-canvas-modal");
   if (!img || !canvas) return;
 
   function resizeCanvas() {
@@ -101,60 +121,52 @@ function setupModalCanvas() {
     drawROIOnCanvas(canvas, "rgba(255, 0, 0, 0.9)", 2);
   }
 
-  let drawing = false;
-  let startX = 0;
-  let startY = 0;
+  var drawing = false;
+  var startX = 0;
+  var startY = 0;
 
-  if (img.complete) {
-    resizeCanvas();
-  }
-
-  img.addEventListener("load", () => {
-    resizeCanvas();
-  });
-
+  if (img.complete) resizeCanvas();
+  img.addEventListener("load", resizeCanvas);
   window.addEventListener("resize", resizeCanvas);
 
-  canvas.onmousedown = (e) => {
+  canvas.onmousedown = function (e) {
     drawing = true;
     startX = e.offsetX;
     startY = e.offsetY;
   };
 
-  canvas.onmousemove = (e) => {
-    const ctx = canvas.getContext("2d");
+  canvas.onmousemove = function (e) {
+    var ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawROIOnCanvas(canvas, "rgba(255, 0, 0, 0.9)", 2);
     if (!drawing) return;
-    const x = Math.min(startX, e.offsetX);
-    const y = Math.min(startY, e.offsetY);
-    const w = Math.abs(e.offsetX - startX);
-    const h = Math.abs(e.offsetY - startY);
+    var x = Math.min(startX, e.offsetX);
+    var y = Math.min(startY, e.offsetY);
+    var w = Math.abs(e.offsetX - startX);
+    var h = Math.abs(e.offsetY - startY);
     ctx.strokeStyle = "rgba(255,165,0,0.9)";
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, w, h);
   };
 
-  canvas.onmouseup = (e) => {
+  canvas.onmouseup = function (e) {
     drawing = false;
-    const endX = e.offsetX;
-    const endY = e.offsetY;
-    const x = Math.min(startX, endX);
-    const y = Math.min(startY, endY);
-    const w = Math.abs(endX - startX);
-    const h = Math.abs(endY - startY);
-
-    const naturalW = img.naturalWidth || img.width;
-    const naturalH = img.naturalHeight || img.height;
-    const dispW = img.clientWidth;
-    const dispH = img.clientHeight;
-    const scaleX = naturalW / (dispW || naturalW);
-    const scaleY = naturalH / (dispH || naturalH);
-
-    const rx = Math.round(x * scaleX);
-    const ry = Math.round(y * scaleY);
-    const rw = Math.round(w * scaleX);
-    const rh = Math.round(h * scaleY);
+    var endX = e.offsetX;
+    var endY = e.offsetY;
+    var x = Math.min(startX, endX);
+    var y = Math.min(startY, endY);
+    var w = Math.abs(endX - startX);
+    var h = Math.abs(endY - startY);
+    var naturalW = img.naturalWidth || img.width;
+    var naturalH = img.naturalHeight || img.height;
+    var dispW = img.clientWidth;
+    var dispH = img.clientHeight;
+    var scaleX = naturalW / (dispW || naturalW);
+    var scaleY = naturalH / (dispH || naturalH);
+    var rx = Math.round(x * scaleX);
+    var ry = Math.round(y * scaleY);
+    var rw = Math.round(w * scaleX);
+    var rh = Math.round(h * scaleY);
 
     try {
       pywebview.api.set_roi(rx, ry, rw, rh);
@@ -164,22 +176,31 @@ function setupModalCanvas() {
     }
   };
 
-  canvas.ondblclick = () => {
+  canvas.ondblclick = function () {
     clearLocalROI();
   };
 }
 
+// ---------------------------------------------------------------
+// 4. OCR (atualização rápida no modal de ajuste)
+// ---------------------------------------------------------------
 function onOcrUpdate(dados) {
   try {
-    const obj = typeof dados === "string" ? JSON.parse(dados) : dados;
-    const text = obj.texto || "";
-    const conf = obj.confianca || 0;
-    const pad = obj.padrao || "";
-    const textEl = document.getElementById("ocr-text");
-    const metaEl = document.getElementById("ocr-meta");
+    var obj = typeof dados === "string" ? JSON.parse(dados) : dados;
+    var text = obj.texto || "";
+    var conf = obj.confianca || 0;
+    var pad = obj.padrao || "";
+    var textEl = document.getElementById("ocr-text");
+    var metaEl = document.getElementById("ocr-meta");
+
     if (textEl) {
       textEl.textContent = text
-        ? `Placa: ${text} | Modelo: ${pad} | Confiança: ${conf.toFixed ? conf.toFixed(2) : conf}`
+        ? "Placa: " +
+          text +
+          " | Modelo: " +
+          pad +
+          " | Confiança: " +
+          (conf.toFixed ? conf.toFixed(2) : conf)
         : "Nenhum resultado";
     }
     if (metaEl) metaEl.textContent = "";
@@ -188,9 +209,12 @@ function onOcrUpdate(dados) {
   }
 }
 
+// ---------------------------------------------------------------
+// 5. ROI no monitoramento principal
+// ---------------------------------------------------------------
 function setupROICanvas() {
-  const img = document.getElementById("camera-stream");
-  const canvas = document.getElementById("camera-canvas");
+  var img = document.getElementById("camera-stream");
+  var canvas = document.getElementById("camera-canvas");
   if (!img || !canvas) return;
 
   function resizeCanvas() {
@@ -201,60 +225,52 @@ function setupROICanvas() {
     drawROIOnCanvas(canvas, "rgba(180,180,180,0.9)", 1);
   }
 
-  let drawing = false;
-  let startX = 0;
-  let startY = 0;
+  var drawing = false;
+  var startX = 0;
+  var startY = 0;
 
-  if (img.complete) {
-    resizeCanvas();
-  }
-
-  img.addEventListener("load", () => {
-    resizeCanvas();
-  });
-
+  if (img.complete) resizeCanvas();
+  img.addEventListener("load", resizeCanvas);
   window.addEventListener("resize", resizeCanvas);
 
-  canvas.addEventListener("mousedown", (e) => {
+  canvas.addEventListener("mousedown", function (e) {
     drawing = true;
     startX = e.offsetX;
     startY = e.offsetY;
   });
 
-  canvas.addEventListener("mousemove", (e) => {
-    const ctx = canvas.getContext("2d");
+  canvas.addEventListener("mousemove", function (e) {
+    var ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawROIOnCanvas(canvas, "rgba(180,180,180,0.9)", 1);
     if (!drawing) return;
-    const x = Math.min(startX, e.offsetX);
-    const y = Math.min(startY, e.offsetY);
-    const w = Math.abs(e.offsetX - startX);
-    const h = Math.abs(e.offsetY - startY);
+    var x = Math.min(startX, e.offsetX);
+    var y = Math.min(startY, e.offsetY);
+    var w = Math.abs(e.offsetX - startX);
+    var h = Math.abs(e.offsetY - startY);
     ctx.strokeStyle = "rgba(255,165,0,0.9)";
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, w, h);
   });
 
-  canvas.addEventListener("mouseup", (e) => {
+  canvas.addEventListener("mouseup", function (e) {
     drawing = false;
-    const endX = e.offsetX;
-    const endY = e.offsetY;
-    const x = Math.min(startX, endX);
-    const y = Math.min(startY, endY);
-    const w = Math.abs(endX - startX);
-    const h = Math.abs(endY - startY);
-
-    const naturalW = img.naturalWidth || img.width;
-    const naturalH = img.naturalHeight || img.height;
-    const dispW = img.clientWidth;
-    const dispH = img.clientHeight;
-    const scaleX = naturalW / (dispW || naturalW);
-    const scaleY = naturalH / (dispH || naturalH);
-
-    const rx = Math.round(x * scaleX);
-    const ry = Math.round(y * scaleY);
-    const rw = Math.round(w * scaleX);
-    const rh = Math.round(h * scaleY);
+    var endX = e.offsetX;
+    var endY = e.offsetY;
+    var x = Math.min(startX, endX);
+    var y = Math.min(startY, endY);
+    var w = Math.abs(endX - startX);
+    var h = Math.abs(endY - startY);
+    var naturalW = img.naturalWidth || img.width;
+    var naturalH = img.naturalHeight || img.height;
+    var dispW = img.clientWidth;
+    var dispH = img.clientHeight;
+    var scaleX = naturalW / (dispW || naturalW);
+    var scaleY = naturalH / (dispH || naturalH);
+    var rx = Math.round(x * scaleX);
+    var ry = Math.round(y * scaleY);
+    var rw = Math.round(w * scaleX);
+    var rh = Math.round(h * scaleY);
 
     try {
       pywebview.api.set_roi(rx, ry, rw, rh);
@@ -264,18 +280,21 @@ function setupROICanvas() {
     }
   });
 
-  canvas.addEventListener("dblclick", () => {
+  canvas.addEventListener("dblclick", function () {
     clearLocalROI();
   });
 }
 
 setupROICanvas();
 
+// ---------------------------------------------------------------
+// 6. Últimos acessos (tabela lateral)
+// ---------------------------------------------------------------
 function carregarUltimosAcessos() {
-  const maxAttempts = 10;
-  let attempt = 0;
+  var maxAttempts = 10;
+  var attempt = 0;
 
-  function tryLoad() {
+  function tentarCarregar() {
     attempt++;
     try {
       if (
@@ -284,66 +303,65 @@ function carregarUltimosAcessos() {
         !window.pywebview.api.get_ultimos_acessos
       ) {
         if (attempt < maxAttempts) {
-          setTimeout(tryLoad, 200);
+          setTimeout(tentarCarregar, 200);
         } else {
-          console.warn("carregarUltimosAcessos: pywebview.api não disponível");
+          console.warn("carregarUltimosAcessos: pywebview.api indisponível");
         }
         return;
       }
-
       window.pywebview.api
         .get_ultimos_acessos()
-        .then((dados) => {
+        .then(function (dados) {
           renderizarTabelaAcessos(dados || []);
         })
-        .catch((err) => {
+        .catch(function (err) {
           console.warn("carregarUltimosAcessos error (call)", err);
-          if (attempt < maxAttempts) setTimeout(tryLoad, 200);
+          if (attempt < maxAttempts) setTimeout(tentarCarregar, 200);
         });
     } catch (e) {
       console.warn("carregarUltimosAcessos error", e);
-      if (attempt < maxAttempts) setTimeout(tryLoad, 200);
+      if (attempt < maxAttempts) setTimeout(tentarCarregar, 200);
     }
   }
 
-  tryLoad();
+  tentarCarregar();
 }
 
 function renderizarTabelaAcessos(dados) {
-  const tbody = document.getElementById("tabela-acessos");
+  var tbody = document.getElementById("tabela-acessos");
   tbody.innerHTML = "";
-
-  const TOTAL_LINHAS = 8;
+  var TOTAL_LINHAS = 8;
 
   function celula(valor) {
-    if (!valor)
-      return `<td style="color:#aaa; font-style:italic;">Sem informação</td>`;
-    return `<td>${valor}</td>`;
+    return valor
+      ? "<td>" + valor + "</td>"
+      : '<td style="color:#aaa; font-style:italic;">Sem informação</td>';
   }
 
-  dados.forEach((linha) => {
-    const [placa, veiculo, morador, dataHora] = linha;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-            ${celula(placa)}
-            ${celula(veiculo)}
-            ${celula(morador)}
-            ${celula(dataHora)}
-        `;
+  dados.forEach(function (linha) {
+    var placa = linha[0],
+      veiculo = linha[1],
+      morador = linha[2],
+      dataHora = linha[3];
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      celula(placa) + celula(veiculo) + celula(morador) + celula(dataHora);
     tbody.appendChild(tr);
   });
 
-  const linhasFaltando = TOTAL_LINHAS - dados.length;
-  for (let i = 0; i < linhasFaltando; i++) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td></td><td></td><td></td><td></td>`;
+  for (var i = dados.length; i < TOTAL_LINHAS; i++) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td></td><td></td><td></td><td></td>";
     tbody.appendChild(tr);
   }
 }
 
+// ---------------------------------------------------------------
+// 7. Botões de controle (portão e automação)
+// ---------------------------------------------------------------
 function atualizarBotoesMonitoramento() {
-  const btnPortao = document.getElementById("btn-portao");
-  const btnAutomacao = document.getElementById("btn-automacao");
+  var btnPortao = document.getElementById("btn-portao");
+  var btnAutomacao = document.getElementById("btn-automacao");
 
   if (btnPortao) {
     if (portaoAberto) {
@@ -368,21 +386,23 @@ function atualizarBotoesMonitoramento() {
 
 async function carregarEstadoAutomacao() {
   try {
-    const valor = await window.pywebview.api.get_automacao();
+    var valor = await window.pywebview.api.get_automacao();
     automacaoAtiva = !!valor;
   } catch (e) {
-    automacaoAtiva = true;
+    automacaoAtiva = true; 
+    console.warn("carregarEstadoAutomacao error", e);
   }
   atualizarBotoesMonitoramento();
 }
 
 async function togglePortao() {
-  const comando = portaoAberto ? "CLOSE" : "OPEN";
+  if (!automacaoAtiva) {
+    alert("Automação desativada. Ative a automação para controlar o portão.");
+    return;
+  }
+  var comando = portaoAberto ? "CLOSE" : "OPEN";
   try {
-    const enviado = await window.pywebview.api.enviar_comando_portao(
-      comando,
-      5,
-    );
+    var enviado = await window.pywebview.api.enviar_comando_portao(comando, 5);
     if (enviado) {
       portaoAberto = !portaoAberto;
       atualizarBotoesMonitoramento();
@@ -404,8 +424,15 @@ async function toggleAutomacao() {
     automacaoAtiva = !automacaoAtiva;
   }
   atualizarBotoesMonitoramento();
+
+  if (!automacaoAtiva) {
+    setCameraPlaceholder(true);
+  }
 }
 
+// ---------------------------------------------------------------
+// 8. Inicialização da tela de monitoramento
+// ---------------------------------------------------------------
 setCameraPlaceholder(true);
 atualizarStatus();
 carregarUltimosAcessos();

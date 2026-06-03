@@ -1,3 +1,4 @@
+/* --- Overlay (fundo escuro) --- */
 .modal-overlay {
   display: none;
   position: fixed;
@@ -12,6 +13,7 @@
   display: flex;
 }
 
+/* --- Caixa do modal --- */
 .modal-box {
   background: var(--cor-fundo);
   border-radius: 16px;
@@ -21,6 +23,7 @@
   gap: 16px;
 }
 
+/* --- Título padrão --- */
 .modal-titulo {
   font-size: 1.2rem;
   font-weight: 700;
@@ -29,14 +32,16 @@
   padding-bottom: 8px;
 }
 
+/* --- Seção dentro de modais com grid --- */
 .modal-secao {
   font-weight: 700;
   color: var(--cor-texto);
   border-bottom: 1px solid var(--cor-borda);
   padding-bottom: 4px;
-  grid-column: 1/-1;
+  grid-column: 1 / -1;
 }
 
+/* --- Grid para formulários (ex.: Adicionar/Atualizar) --- */
 .modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -67,6 +72,7 @@
   color: #666;
 }
 
+/* --- Rodapé com botões de ação --- */
 .modal-rodape {
   display: flex;
   gap: 10px;
@@ -78,38 +84,46 @@
   color: var(--cor-texto) !important;
 }
 
-/* ===== MODAL TENTATIVA DE ACESSO (novo layout) ===== */
+/* ============================================================
+   MODAL DE TENTATIVA DE ACESSO
+   ============================================================ */
+#modal-acesso .modal-box {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
 .modal-titulo-acesso {
   font-size: 1rem;
   font-weight: 700;
-  color: #000;
-  text-align: left;
-  padding: 14px 16px 10px;
+  padding: 16px 20px 12px;
   margin: 0;
-  border-bottom: none;
+  border-bottom: 1px solid #eee;
 }
 
+/* --- Layout flexível em duas colunas --- */
 .acesso-conteudo {
   display: flex;
-  gap: 12px;
-  padding: 0 16px 8px;
-}
-
-.acesso-coluna-esquerda,
-.acesso-coluna-direita {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 20px;
+  padding: 16px 20px;
+  align-items: flex-start;
 }
 
 .acesso-coluna-esquerda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 130px;
 }
 
 .acesso-coluna-direita {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
+/* --- Blocos internos (foto, câmera, carro, dados) --- */
 .acesso-bloco {
   display: flex;
   flex-direction: column;
@@ -119,82 +133,112 @@
 .acesso-label {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #555;
-  text-transform: none;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+/* --- Caixas de imagem --- */
 .acesso-img-box {
-  width: 110px;
-  height: 90px;
-  background: #a0b4c8;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: 8px;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .acesso-placeholder-pessoa {
-  background: #a0b4c8;
+  width: 120px;
+  height: 120px;
+  background: #e8ecf0;
 }
 
 .acesso-camera-box {
+  width: 130px;
+  height: 130px;
   background: #000;
+}
+
+.acesso-camera-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .acesso-carro-box {
   width: 100%;
-  height: 110px;
-  background: #fff;
+  height: 130px;
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  position: relative;
+}
+
+.acesso-carro-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .acesso-sem-foto {
+  position: absolute;
   color: #aaa;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
+/* --- Card de dados do morador --- */
 .acesso-dados-caixa {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 0.72rem;
-  line-height: 1.5;
-  background: #fff;
-  color: #000;
+  background: #f8f9fb;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  line-height: 1.6;
 }
 
 .acesso-dados-caixa div {
   margin-bottom: 2px;
 }
 
+.acesso-dados-caixa strong {
+  color: #333;
+}
+
+/* --- Countdown --- */
+.acesso-countdown {
+  display: none;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1e2d3d;
+  margin-top: 4px;
+}
+
+/* --- Botões de ação --- */
 .acesso-botoes {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  padding: 8px 16px 16px;
+  gap: 16px;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+}
+
+.acesso-botoes button {
+  flex: 1;
+  max-width: 180px;
+  padding: 10px 0;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 #btn-cancelar-acesso {
   background: #8a8a8a;
   color: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 0;
-  width: 150px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 #btn-adiantar-acesso {
   background: #1a73e8;
   color: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 0;
-  width: 150px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
 }

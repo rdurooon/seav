@@ -1,56 +1,73 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* --- Reset básico --- */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+/* --- Variáveis de tema --- */
 :root {
-    --cor-principal: #1e2d3d;
-    --cor-fundo: #ffffff;
-    --cor-texto: #1e2d3d;
-    --cor-texto-claro: #ffffff;
-    --cor-borda: #1e2d3d;
-    --fonte: 'Inter', sans-serif;
+  --cor-principal: #1e2d3d;
+  --cor-fundo: #ffffff;
+  --cor-texto: #1e2d3d;
+  --cor-texto-claro: #ffffff;
+  --cor-borda: #1e2d3d;
+  --fonte: "Inter", sans-serif;
+}
+
+/* --- Corpo da página --- */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
-    font-family: var(--fonte);
-    background-color: var(--cor-fundo);
-    color: var(--cor-texto);
-    height: 100vh;
-    overflow: hidden;
+  font-family: var(--fonte);
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-size: 16px; /* base confortável */
+  line-height: 1.4;
 }
 
+/* --- Botões padrão --- */
 button {
-    font-family: var(--fonte);
-    background-color: var(--cor-principal);
-    color: var(--cor-texto-claro);
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 1rem;
-    cursor: pointer;
-    font-weight: 600;
+  font-family: var(--fonte);
+  background-color: var(--cor-principal);
+  color: var(--cor-texto-claro);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
 
 button:hover {
-    opacity: 0.85;
+  opacity: 0.85;
 }
 
+button:active {
+  opacity: 0.7;
+}
+
+/* --- Tabelas --- */
 table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
 
-th, td {
-    border: 1px solid var(--cor-borda);
-    padding: 10px;
-    text-align: center;
+th,
+td {
+  border: 1px solid var(--cor-borda);
+  padding: 10px;
+  text-align: center;
 }
 
 th {
-    background-color: var(--cor-fundo);
-    font-weight: 600;
+  background-color: var(--cor-fundo);
+  font-weight: 600;
 }

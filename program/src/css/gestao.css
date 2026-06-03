@@ -1,3 +1,4 @@
+/* --- Container principal --- */
 .gestao-container {
   display: flex;
   flex-direction: column;
@@ -6,6 +7,7 @@
   gap: 16px;
 }
 
+/* --- Topo (relógio + status) --- */
 .gestao-topo {
   display: flex;
   flex-direction: column;
@@ -13,35 +15,36 @@
   color: var(--cor-texto);
 }
 
-.gestao-tabela {
-  flex: 1;
+/* --- Campo de pesquisa --- */
+.gestao-pesquisa {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow: hidden;
-  height: 100%;
+  gap: 10px;
+  align-items: center;
 }
 
-.gestao-tabela h2 {
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.tabela-wrapper {
+.gestao-pesquisa input {
   flex: 1;
-  overflow-y: auto;
-  border: 2px solid var(--cor-borda);
-  border-radius: 12px;
-  overflow: hidden;
-  height: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 8px;
+  font-family: var(--fonte);
+  font-size: 0.9rem;
+  color: var(--cor-texto);
 }
 
-.tabela-wrapper table {
-  width: 100%;
-  height: 100%;
-  table-layout: fixed;
+.gestao-pesquisa select {
+  padding: 8px 12px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 8px;
+  font-family: var(--fonte);
+  font-size: 0.9rem;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
 }
 
+/* ============================================================
+   CONTEÚDO PRINCIPAL (botões + tabela)
+   ============================================================ */
 .gestao-conteudo {
   display: flex;
   flex: 1;
@@ -49,6 +52,7 @@
   overflow: hidden;
 }
 
+/* --- Botões de ação (Adicionar, Atualizar, Remover, Histórico) --- */
 .gestao-botoes {
   display: flex;
   flex-direction: column;
@@ -65,11 +69,24 @@
   border-radius: 10px;
 }
 
-.linha-selecionada {
-  background-color: #d0e8ff !important;
-  cursor: pointer;
+/* ============================================================
+   TABELA DE VEÍCULOS CADASTRADOS
+   ============================================================ */
+.gestao-tabela {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  height: 100%;
 }
 
+.gestao-tabela h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Wrapper com scroll */
 .tabela-wrapper {
   flex: 1;
   border: 2px solid var(--cor-borda);
@@ -101,33 +118,8 @@
   border-color: transparent;
 }
 
+/* --- Linha selecionada --- */
 .linha-selecionada {
   background-color: #d0e8ff !important;
   cursor: pointer;
-}
-
-.gestao-pesquisa {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.gestao-pesquisa input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1.5px solid var(--cor-borda);
-  border-radius: 8px;
-  font-family: var(--fonte);
-  font-size: 0.9rem;
-  color: var(--cor-texto);
-}
-
-.gestao-pesquisa select {
-  padding: 8px 12px;
-  border: 1.5px solid var(--cor-borda);
-  border-radius: 8px;
-  font-family: var(--fonte);
-  font-size: 0.9rem;
-  color: var(--cor-texto);
-  background: var(--cor-fundo);
 }

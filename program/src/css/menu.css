@@ -1,9 +1,13 @@
+/* --- Container principal (dividido em duas metades) --- */
 .menu-container {
   display: flex;
   height: 100vh;
   width: 100vw;
 }
 
+/* ============================================================
+   COLUNA ESQUERDA (conteúdo do menu)
+   ============================================================ */
 .menu-esquerda {
   display: flex;
   flex-direction: column;
@@ -13,12 +17,14 @@
   background-color: var(--cor-fundo);
 }
 
+/* Topo: relógio e status do sistema */
 .menu-topo {
   display: flex;
   flex-direction: column;
   font-size: 0.85rem;
 }
 
+/* Logo e título do sistema */
 .menu-logo {
   display: flex;
   flex-direction: column;
@@ -35,6 +41,7 @@
   color: var(--cor-principal);
 }
 
+/* Botões de navegação */
 .menu-botoes {
   display: flex;
   flex-direction: column;
@@ -48,12 +55,16 @@
   border-radius: 10px;
 }
 
+/* Rodapé: botões de configurações e informações */
 .menu-rodape {
   display: flex;
   gap: 12px;
   font-size: 1.4rem;
 }
 
+/* ============================================================
+   COLUNA DIREITA (decoração)
+   ============================================================ */
 .menu-direita {
   width: 50%;
   background-color: var(--cor-principal);
@@ -66,6 +77,9 @@
   width: 80%;
 }
 
+/* ============================================================
+   BOTÕES DE ÍCONE (⚙ e ℹ)
+   ============================================================ */
 .btn-icone {
   background: none;
   border: none;
@@ -79,10 +93,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  transition: background 0.2s;
 }
 
 .btn-icone:hover {
   background: #e8ecf0;
-  opacity: 1;
 }

@@ -1,0 +1,49 @@
+<link rel="stylesheet" href="css/relatorio.css" />
+
+<div class="relatorio-container">
+  <div class="relatorio-topo">
+    <span id="relogio"></span>
+    <span id="status-sistema">Status do sistema: Sem Conexão</span>
+  </div>
+
+  <div class="relatorio-conteudo">
+    <div class="relatorio-header">
+      <h2>Relatório</h2>
+    </div>
+
+    <div class="relatorio-filtros">
+      <input
+        type="date"
+        id="filtro-data-inicio-rel"
+        placeholder="Data início"
+      />
+      <input type="date" id="filtro-data-fim-rel" placeholder="Data fim" />
+      <input type="text" id="filtro-placa-rel" placeholder="Placa" />
+      <button onclick="filtrarRelatorio()">Filtrar</button>
+      <span style="flex: 1"></span>
+      <button
+        class="btn-exportar"
+        onclick="exportarRelatorio()"
+        title="Exportar para CSV"
+      >
+        📥 Exportar
+      </button>
+    </div>
+
+    <div class="relatorio-tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Placa</th>
+            <th>Veículo</th>
+            <th>Morador</th>
+            <th>Endereço</th>
+            <th>Data e hora</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-relatorio"></tbody>
+      </table>
+    </div>
+  </div>
+</div>

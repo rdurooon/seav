@@ -1,3 +1,4 @@
+/* --- Container principal --- */
 .monitoramento-container {
   display: flex;
   flex-direction: column;
@@ -6,6 +7,7 @@
   gap: 16px;
 }
 
+/* --- Topo (relógio + status) --- */
 .mon-topo {
   display: flex;
   flex-direction: column;
@@ -13,6 +15,7 @@
   color: var(--cor-texto);
 }
 
+/* --- Conteúdo: câmera + tabela lado a lado --- */
 .mon-conteudo {
   display: flex;
   flex: 1;
@@ -20,11 +23,15 @@
   overflow: hidden;
 }
 
+/* ============================================================
+   CÂMERA
+   ============================================================ */
 .mon-camera {
   flex: 1;
 }
 
 .camera-feed {
+  position: relative;
   width: 100%;
   height: 100%;
   background-color: #000;
@@ -41,7 +48,10 @@
   position: relative;
 }
 
+/* Stream de vídeo */
 #camera-stream {
+  color: transparent;
+  font-size: 0;
   object-fit: cover;
   width: 100%;
   height: 100%;
@@ -49,6 +59,7 @@
   background-color: #000;
 }
 
+/* Placeholder "Sem sinal" / "Automação desativada" */
 .camera-placeholder {
   position: absolute;
   inset: 0;
@@ -62,14 +73,22 @@
   z-index: 1;
 }
 
-.camera-feed {
-  position: relative;
-}
-
 .camera-placeholder.hidden {
   display: none;
 }
 
+/* Remove qualquer texto residual sobre a câmera */
+.camera-wrapper img:after,
+.camera-wrapper img::after,
+.camera-wrapper::after,
+.camera-feed::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* ============================================================
+   TABELA DE ÚLTIMOS ACESSOS
+   ============================================================ */
 .mon-tabela {
   flex: 1;
   display: flex;
@@ -83,33 +102,15 @@
   font-weight: 700;
 }
 
+/* Unifica as duas definições duplicadas da tabela */
 .mon-tabela table {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 2px solid var(--cor-borda);
+  width: 100%;
   height: 100%;
   table-layout: fixed;
-}
-
-.mon-botoes {
-  display: flex;
-  gap: 16px;
-  justify-content: flex-end;
-  padding-bottom: 16px;
-  padding-right: 8px;
-}
-
-.mon-botoes button {
-  padding: 12px 24px;
-}
-
-.mon-tabela table {
+  border-collapse: collapse;
   border-radius: 12px;
   overflow: hidden;
   border: 2px solid var(--cor-borda);
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
 }
 
 .mon-tabela tr {
@@ -127,4 +128,19 @@
 
 .mon-tabela tbody tr td:empty {
   border-color: transparent;
+}
+
+/* ============================================================
+   BOTÕES DE AÇÃO (ABRIR PORTÃO / AUTOMAÇÃO)
+   ============================================================ */
+.mon-botoes {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  padding-bottom: 16px;
+  padding-right: 8px;
+}
+
+.mon-botoes button {
+  padding: 12px 24px;
 }

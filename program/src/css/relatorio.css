@@ -1,0 +1,92 @@
+/* ============================================================
+   RELATÓRIO – Página de consulta e exportação de dados
+   ============================================================ */
+
+.relatorio-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px 24px;
+  gap: 12px;
+}
+
+.relatorio-topo {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+}
+
+.relatorio-conteudo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.relatorio-header h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.relatorio-filtros {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.relatorio-filtros input {
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-family: var(--fonte);
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  width: 130px;
+}
+
+.relatorio-filtros button {
+  padding: 6px 18px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
+.btn-exportar {
+  background: none;
+  border: 1px solid var(--cor-principal);
+  color: var(--cor-principal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.btn-exportar:hover {
+  background: var(--cor-principal);
+  color: #fff;
+}
+
+.relatorio-tabela table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.relatorio-tabela tr {
+  height: 40px;
+  max-height: 40px;
+}
+
+.relatorio-tabela td,
+.relatorio-tabela th {
+  padding: 8px 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
