@@ -1,4 +1,5 @@
 *.key
+alpr_perfil.json
 __pycache__/
 *.py[cod]
 *$py.class

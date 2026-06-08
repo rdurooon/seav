@@ -12,7 +12,7 @@ async function navegarPara(pagina) {
   iniciarRelogio();
   atualizarStatus();
 
-  var paginasComJS = ["gestao", "monitoramento", "historico", "relatorio"];
+  var paginasComJS = ["gestao", "monitoramento", "historico"];
   if (paginasComJS.indexOf(pagina) !== -1) {
     var script = document.createElement("script");
     script.src = "js/" + pagina + ".js";
@@ -80,6 +80,14 @@ function fecharModal(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.classList.remove("ativo");
+}
+
+function isAjusteModalAberto() {
+  var modal = document.getElementById("modal-ajuste");
+  if (!modal) return false;
+  if (modal.classList.contains("ativo")) return true;
+  if (modal.style.display && modal.style.display !== "none") return true;
+  return false;
 }
 
 // ---------------------------------------------------------------
@@ -196,6 +204,9 @@ function abrirModalAjuste() {
 
 function fecharModalAjuste() {
   fecharModal("modal-ajuste");
+  if (_filaAcesso.length > 0) {
+    setTimeout(processarProximaDetecção, 300);
+  }
 }
 
 // ---------------------------------------------------------------
@@ -428,6 +439,14 @@ var _modalAcessoAberto = false;
 var _filaAcesso = [];
 
 function showAcessoModal(dados) {
+  if (!dados || dados.autorizado !== true) {
+    console.log("showAcessoModal: ignorando placa não cadastrada ou não autorizada.");
+    return;
+  }
+  if (isAjusteModalAberto()) {
+    console.log("showAcessoModal: ignorando detecção durante Ajustar reconhecimento.");
+    return;
+  }
   if (_modalAcessoAberto) {
     console.log("Modal já aberto, ignorando nova detecção.");
     return;
@@ -565,19 +584,24 @@ function onPlacaDetectada(dados) {
   try {
     var obj = typeof dados === "string" ? JSON.parse(dados) : dados;
 
-    if (_modalAcessoAberto) {
-      console.log("Modal ocupado – adicionando à fila.");
-      _filaAcesso.push(obj);
-      return;
-    }
-
     var placa = obj.placa;
     var veiculo = obj.veiculo || "";
     var morador = obj.morador || "";
     var dataHora = obj.data_hora || new Date().toLocaleString();
 
     if (typeof window.showAcessoModal === "function") {
-      window.showAcessoModal(obj);
+      if (isAjusteModalAberto()) {
+        console.log("Ignorando detecção durante Ajustar reconhecimento.");
+      } else if (obj.autorizado === true) {
+        if (_modalAcessoAberto) {
+          console.log("Modal ocupado – adicionando à fila.");
+          _filaAcesso.push(obj);
+        } else {
+          window.showAcessoModal(obj);
+        }
+      } else {
+        console.log("Placa não cadastrada detectada; sem ação de acesso.");
+      }
     }
 
     var tabela = document.getElementById("tabela-acessos");
@@ -608,6 +632,10 @@ function onPlacaDetectada(dados) {
 
 function processarProximaDetecção() {
   if (_filaAcesso.length === 0) return;
+  if (isAjusteModalAberto()) {
+    console.log("Ajuste de reconhecimento aberto; aguardando antes de processar a próxima detecção.");
+    return;
+  }
   var proximo = _filaAcesso.shift();
 
   setTimeout(function () {
@@ -623,10 +651,20 @@ async function enviarComandoAbertura(tempoSegundos) {
     console.log("Automação desativada – comando de abertura ignorado.");
     return;
   }
+  if (portaoAberto) {
+    console.log("Portão já está marcado como aberto; comando OPEN ignorado.");
+    return;
+  }
   if (typeof tempoSegundos === "undefined")
     tempoSegundos = OPEN_COMMAND_DURATION;
   try {
-    await pywebview.api.enviar_comando_portao("OPEN", tempoSegundos);
+    var enviado = await pywebview.api.enviar_comando_portao("OPEN", tempoSegundos);
+    if (enviado) {
+      portaoAberto = true;
+      if (typeof atualizarBotoesMonitoramento === "function") {
+        atualizarBotoesMonitoramento();
+      }
+    }
   } catch (e) {
     console.warn("enviarComandoAbertura error", e);
   }

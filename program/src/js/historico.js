@@ -254,4 +254,119 @@ function iniciarHistorico() {
   }
 })();
 
+// ---------------------------------------------------------------
+// 8. Exportar relatório (abre modal existente e salva PDF)
+// ---------------------------------------------------------------
+(function attachExportarRelatorio() {
+  var btn = document.getElementById("btn-exportar-relatorio");
+  if (!btn) {
+    setTimeout(attachExportarRelatorio, 100);
+    return;
+  }
+
+  btn.onclick = function () {
+    // reaproveitar modal de confirmação, mas inserir slider e botão Exportar
+    var containerMsg = document.getElementById("msg-confirmar-hist");
+    var originalMsg = containerMsg.textContent;
+    containerMsg.textContent = "Após exportar relatório, deseja excluir todo o histórico?";
+
+    var btnConfirm = document.getElementById("btn-confirmar-hist");
+    var btnCancelar = document.querySelector("#modal-confirmar-historico .btn-cancelar");
+
+    // salvar estado anterior para restaurar
+    var prevConfirmText = btnConfirm.textContent;
+    var prevCancelText = btnCancelar.textContent;
+    var prevConfirmOnclick = btnConfirm.onclick;
+    var prevCancelOnclick = btnCancelar.onclick;
+
+    // criar slider + label e inserir antes dos botões
+    var modalBox = document.querySelector("#modal-confirmar-historico .modal-box");
+    var sliderContainer = document.createElement("div");
+    sliderContainer.style.display = "flex";
+    sliderContainer.style.alignItems = "center";
+    sliderContainer.style.justifyContent = "center";
+    sliderContainer.style.gap = "12px";
+    sliderContainer.style.marginBottom = "12px";
+
+    sliderContainer.innerHTML =
+      '<label class="slider-toggle"><input type="checkbox" id="export-delete-toggle"><span class="slider-thumb"></span></label>' +
+      '<span style="font-size:0.95rem">Excluir histórico após exportar</span>';
+
+    modalBox.insertBefore(sliderContainer, modalBox.querySelector('.modal-rodape'));
+
+    // configurar botoes: confirmar = Exportar, cancelar = Cancelar
+    btnConfirm.textContent = "Exportar";
+    btnCancelar.textContent = "Cancelar";
+
+    btnConfirm.onclick = function () {
+      var tog = document.getElementById("export-delete-toggle");
+      var deletar = !!(tog && tog.checked);
+      fecharModal("modal-confirmar-historico");
+      executarExportacao(deletar).finally(function () {
+        // restaurar estado original
+        btnConfirm.textContent = prevConfirmText;
+        btnCancelar.textContent = prevCancelText;
+        btnConfirm.onclick = prevConfirmOnclick;
+        btnCancelar.onclick = prevCancelOnclick;
+        containerMsg.textContent = originalMsg;
+        // remover slider element
+        if (sliderContainer && sliderContainer.parentNode) sliderContainer.parentNode.removeChild(sliderContainer);
+      });
+    };
+
+    btnCancelar.onclick = function () {
+      // fechar modal e restaurar sem exportar
+      fecharModal("modal-confirmar-historico");
+      btnConfirm.textContent = prevConfirmText;
+      btnCancelar.textContent = prevCancelText;
+      btnConfirm.onclick = prevConfirmOnclick;
+      btnCancelar.onclick = prevCancelOnclick;
+      containerMsg.textContent = originalMsg;
+      if (sliderContainer && sliderContainer.parentNode) sliderContainer.parentNode.removeChild(sliderContainer);
+    };
+
+    abrirModal("modal-confirmar-historico");
+  };
+})();
+
+async function executarExportacao(deletarAposExportar) {
+  try {
+    var dataInicio = document.getElementById("filtro-data-inicio");
+    var dataFim = document.getElementById("filtro-data-fim");
+    var placa = document.getElementById("filtro-placa");
+
+    dataInicio = dataInicio ? dataInicio.value || null : null;
+    dataFim = dataFim ? dataFim.value || null : null;
+    placa = placa ? placa.value.trim() || null : null;
+
+    var resultado = await window.pywebview.api.exportar_relatorio(
+      dataInicio,
+      dataFim,
+      placa,
+      deletarAposExportar,
+    );
+
+    if (!resultado) {
+      alert("Exportação cancelada ou falhou.");
+      return;
+    }
+
+    if (resultado.saved) {
+      alert("Relatório salvo em: " + (resultado.path || ""));
+      if (deletarAposExportar && resultado.deleted) {
+        // recarregar histórico
+        filtrar();
+      } else if (deletarAposExportar && !resultado.deleted) {
+        alert("O relatório foi salvo, mas ocorreu erro ao excluir o histórico.");
+      }
+    } else {
+      // Usuário cancelou a ação de salvar
+      // não remover histórico mesmo que tivesse escolhido
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao exportar relatório.");
+  }
+}
+
 iniciarHistorico();

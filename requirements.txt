@@ -8,3 +8,4 @@ opencv-python
 easyocr
 torch
 torchvision
+reportlab

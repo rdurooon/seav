@@ -100,6 +100,9 @@ function abrirModalAjuste() {
 function fecharModalAjuste() {
   var modal = document.getElementById("modal-ajuste");
   if (modal) modal.style.display = "none";
+  if (typeof processarProximaDetecção === "function" && window._filaAcesso && window._filaAcesso.length > 0) {
+    setTimeout(processarProximaDetecção, 300);
+  }
 }
 
 document.addEventListener("click", function (e) {

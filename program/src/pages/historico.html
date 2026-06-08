@@ -8,7 +8,7 @@
 
   <div class="historico-conteudo">
     <div class="historico-header">
-      <h2>Histórico</h2>
+      <h2>Histórico e Relatório</h2>
     </div>
 
     <div
@@ -19,6 +19,13 @@
       <input type="date" id="filtro-data-fim" placeholder="Data fim" />
       <input type="text" id="filtro-placa" placeholder="Placa" />
       <button onclick="filtrar()">Filtrar</button>
+      <button
+        id="btn-exportar-relatorio"
+        class="btn-exportar"
+        title="Exportar relatório"
+      >
+        📥 Exportar relatório
+      </button>
       <span style="flex: 1"></span>
 
       <button
