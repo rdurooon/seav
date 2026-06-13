@@ -404,11 +404,23 @@ async function togglePortao() {
     return;
   }
   var comando = portaoAberto ? "CLOSE" : "OPEN";
+  if (window._portaoAutoResetTimer) {
+    clearTimeout(window._portaoAutoResetTimer);
+    window._portaoAutoResetTimer = null;
+  }
+  if (typeof window.portaoAbertoAuto !== "undefined") {
+    window.portaoAbertoAuto = false;
+  }
+
   try {
     var enviado = await window.pywebview.api.enviar_comando_portao(comando, 5);
     if (enviado) {
-      portaoAberto = !portaoAberto;
-      atualizarBotoesMonitoramento();
+      if (typeof setPortaoState === "function") {
+        setPortaoState(!portaoAberto, false);
+      } else {
+        portaoAberto = !portaoAberto;
+        atualizarBotoesMonitoramento();
+      }
     } else {
       alert("Não foi possível enviar o comando. Verifique a conexão serial.");
     }

@@ -24,7 +24,7 @@ ULTIMOS_ACESSOS = []
 class API:
     def __init__(self):
         self.db = Api()
-        self.serial_reader = SerialReader()
+        self.serial_reader = None
         self.window = None
         self._ultimo_comando_portao = None
         self._ultimo_comando_portao_ts = 0
@@ -34,8 +34,6 @@ class API:
         except NameError:
             ULTIMOS_ACESSOS = []
         self.ultimo_acessos = ULTIMOS_ACESSOS
-        # Tentar conectar à porta salva automaticamente
-        self._conectar_porta_salva_auto()
         self._load_automacao_config()
 
     def _load_automacao_config(self):
@@ -56,12 +54,18 @@ class API:
         except Exception:
             pass  # Silenciosamente - o status será atualizado no frontend
 
+    def _ensure_serial_reader(self):
+        if self.serial_reader is None:
+            self.serial_reader = SerialReader()
+        return self.serial_reader
+
     def set_window(self, window):
         self.__window = window
-        self.serial_reader.set_frame_callback(self._frame_update_callback)
+        serial_reader = self._ensure_serial_reader()
+        serial_reader.set_frame_callback(self._frame_update_callback)
         # registrar callback de placa
         try:
-            self.serial_reader.set_placa_callback(self.__on_placa_detectada)
+            serial_reader.set_placa_callback(self.__on_placa_detectada)
         except Exception:
             pass
         # registrar callback de OCR (atualizações rápidas para modal de ajuste)
@@ -73,18 +77,22 @@ class API:
                 except Exception:
                     pass
 
-            self.serial_reader.set_ocr_callback(_forward_ocr)
+            serial_reader.set_ocr_callback(_forward_ocr)
         except Exception:
             pass
         # aplicar configuração de supressão de erros ao SerialReader
         try:
             val = self.db.carregar_config('suppress_errors')
             enabled = str(val) == '1' or str(val).lower() == 'true'
-            if getattr(self, 'serial_reader', None):
-                try:
-                    self.serial_reader.set_suppress_errors(enabled)
-                except Exception:
-                    pass
+            try:
+                serial_reader.set_suppress_errors(enabled)
+            except Exception:
+                pass
+        except Exception:
+            pass
+        # tentar conectar a porta salva somente depois que a interface estiver pronta
+        try:
+            self._conectar_porta_salva_auto()
         except Exception:
             pass
 
@@ -485,7 +493,7 @@ class API:
         return
 
     def connect_serial(self, port):
-        return self.serial_reader.connect(port)
+        return self._ensure_serial_reader().connect(port)
 
     def enviar_comando_portao(self, comando, tempo=5):
         try:
@@ -536,7 +544,10 @@ class API:
         return "SEAV funcionando!"
 
     def get_status(self):
-        return self.serial_reader.get_status()
+        try:
+            return self.serial_reader.get_status() if self.serial_reader else "Sem Conexão"
+        except Exception:
+            return "Sem Conexão"
 
     # Métodos expostos para o frontend
     def cadastrar_completo(self, dados):

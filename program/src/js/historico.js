@@ -272,12 +272,20 @@ function iniciarHistorico() {
 
     var btnConfirm = document.getElementById("btn-confirmar-hist");
     var btnCancelar = document.querySelector("#modal-confirmar-historico .btn-cancelar");
+    var modalRodape = btnConfirm ? btnConfirm.parentNode : null;
 
     // salvar estado anterior para restaurar
     var prevConfirmText = btnConfirm.textContent;
     var prevCancelText = btnCancelar.textContent;
     var prevConfirmOnclick = btnConfirm.onclick;
     var prevCancelOnclick = btnCancelar.onclick;
+    var prevConfirmStyle = btnConfirm.getAttribute("style");
+    var prevCancelStyle = btnCancelar.getAttribute("style");
+
+    // inverter ordem dos botões para exportação
+    if (modalRodape && btnConfirm && btnCancelar && btnConfirm.parentNode === modalRodape) {
+      modalRodape.insertBefore(btnConfirm, btnCancelar);
+    }
 
     // criar slider + label e inserir antes dos botões
     var modalBox = document.querySelector("#modal-confirmar-historico .modal-box");
@@ -297,6 +305,9 @@ function iniciarHistorico() {
     // configurar botoes: confirmar = Exportar, cancelar = Cancelar
     btnConfirm.textContent = "Exportar";
     btnCancelar.textContent = "Cancelar";
+    btnConfirm.style.background = "var(--cor-principal)";
+    btnConfirm.style.color = "#fff";
+    btnConfirm.style.border = "none";
 
     btnConfirm.onclick = function () {
       var tog = document.getElementById("export-delete-toggle");
@@ -308,6 +319,19 @@ function iniciarHistorico() {
         btnCancelar.textContent = prevCancelText;
         btnConfirm.onclick = prevConfirmOnclick;
         btnCancelar.onclick = prevCancelOnclick;
+        if (prevConfirmStyle !== null) {
+          btnConfirm.setAttribute("style", prevConfirmStyle);
+        } else {
+          btnConfirm.removeAttribute("style");
+        }
+        if (prevCancelStyle !== null) {
+          btnCancelar.setAttribute("style", prevCancelStyle);
+        } else {
+          btnCancelar.removeAttribute("style");
+        }
+        if (modalRodape && btnConfirm && btnCancelar) {
+          modalRodape.insertBefore(btnCancelar, btnConfirm);
+        }
         containerMsg.textContent = originalMsg;
         // remover slider element
         if (sliderContainer && sliderContainer.parentNode) sliderContainer.parentNode.removeChild(sliderContainer);
@@ -321,6 +345,19 @@ function iniciarHistorico() {
       btnCancelar.textContent = prevCancelText;
       btnConfirm.onclick = prevConfirmOnclick;
       btnCancelar.onclick = prevCancelOnclick;
+      if (prevConfirmStyle !== null) {
+        btnConfirm.setAttribute("style", prevConfirmStyle);
+      } else {
+        btnConfirm.removeAttribute("style");
+      }
+      if (prevCancelStyle !== null) {
+        btnCancelar.setAttribute("style", prevCancelStyle);
+      } else {
+        btnCancelar.removeAttribute("style");
+      }
+      if (modalRodape && btnConfirm && btnCancelar) {
+        modalRodape.insertBefore(btnCancelar, btnConfirm);
+      }
       containerMsg.textContent = originalMsg;
       if (sliderContainer && sliderContainer.parentNode) sliderContainer.parentNode.removeChild(sliderContainer);
     };

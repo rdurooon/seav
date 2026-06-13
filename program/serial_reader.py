@@ -4,15 +4,9 @@ import threading
 import time
 import base64
 
-try:
-    from ai.alpr_engine import ALPREngine
-    import numpy as _np
-    import cv2 as _cv2
-except Exception as e:
-    print(f"[SerialReader] ALPR import failed: {e}")
-    ALPREngine = None
-    _np = None
-    _cv2 = None
+ALPREngine = None
+_np = None
+_cv2 = None
 
 # Ajuste fino de orientação da câmera.
 # O firmware ESP32 já aplica a correção de orientação no sensor.
@@ -41,7 +35,15 @@ class SerialReader:
         self._reconnect_interval = 5  # Tentar reconectar a cada 5 segundos
         # ALPR
         self._alpr_error = None
+        global ALPREngine, _np, _cv2
         try:
+            if ALPREngine is None:
+                from ai.alpr_engine import ALPREngine as _ALPREngine
+                import numpy as _np_mod
+                import cv2 as _cv2_mod
+                ALPREngine = _ALPREngine
+                _np = _np_mod
+                _cv2 = _cv2_mod
             if ALPREngine is not None:
                 self._alpr = ALPREngine()
             else:

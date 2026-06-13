@@ -12,7 +12,7 @@ async function navegarPara(pagina) {
   iniciarRelogio();
   atualizarStatus();
 
-  var paginasComJS = ["gestao", "monitoramento", "historico"];
+  var paginasComJS = ["gestao", "monitoramento", "historico", "relatorio"];
   if (paginasComJS.indexOf(pagina) !== -1) {
     var script = document.createElement("script");
     script.src = "js/" + pagina + ".js";
@@ -30,7 +30,41 @@ async function navegarPara(pagina) {
 // 2. Estado global (compartilhado com monitoramento)
 // ---------------------------------------------------------------
 var automacaoAtiva = true;
-var portaoAberto = false;
+window.portaoAberto = false;
+window.portaoAbertoAuto = false;
+window._portaoAutoResetTimer = null;
+
+function limparTimerPortaoAuto() {
+  if (window._portaoAutoResetTimer) {
+    clearTimeout(window._portaoAutoResetTimer);
+    window._portaoAutoResetTimer = null;
+  }
+}
+
+function setPortaoState(aberto, auto) {
+  window.portaoAberto = aberto;
+  window.portaoAbertoAuto = !!auto;
+  if (!auto) {
+    limparTimerPortaoAuto();
+  }
+  if (typeof atualizarBotoesMonitoramento === "function") {
+    atualizarBotoesMonitoramento();
+  }
+}
+
+function agendarResetPortaoAuto() {
+  limparTimerPortaoAuto();
+  window._portaoAutoResetTimer = setTimeout(function () {
+    if (window.portaoAberto && window.portaoAbertoAuto) {
+      setPortaoState(false, false);
+    }
+  }, 15000);
+}
+
+function marcarPortaoAbertoAuto() {
+  setPortaoState(true, true);
+  agendarResetPortaoAuto();
+}
 
 // ---------------------------------------------------------------
 // 3. Relógio (atualizado a cada segundo)
@@ -80,14 +114,6 @@ function fecharModal(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.classList.remove("ativo");
-}
-
-function isAjusteModalAberto() {
-  var modal = document.getElementById("modal-ajuste");
-  if (!modal) return false;
-  if (modal.classList.contains("ativo")) return true;
-  if (modal.style.display && modal.style.display !== "none") return true;
-  return false;
 }
 
 // ---------------------------------------------------------------
@@ -153,11 +179,29 @@ function abrirConfig() {
       .catch(function () {});
   } catch (e) {}
 
+  try {
+    pywebview.api
+      .carregar_esp32_ip_portao()
+      .then(function (ip) {
+        var el = document.getElementById("esp32-ip-portao");
+        if (el) el.value = ip || "";
+      })
+      .catch(function () {});
+  } catch (e) {}
+
   abrirModal("modal-config");
 }
 
 function fecharConfig() {
   fecharModal("modal-config");
+}
+
+function validarIpPortao(ip) {
+  if (!ip) return true;
+  var trimmed = ip.trim();
+  if (trimmed.length === 0) return true;
+  if (/\s/.test(trimmed)) return false;
+  return /^([a-zA-Z0-9.-]+)$/.test(trimmed);
 }
 
 function salvarConfig() {
@@ -166,12 +210,22 @@ function salvarConfig() {
     alert("Digite uma porta válida!");
     return;
   }
+
+  var ipPortao = document.getElementById("esp32-ip-portao").value;
+  if (!validarIpPortao(ipPortao)) {
+    alert("Digite um IP ou hostname válido para a ESP32 de portão.");
+    return;
+  }
+
   try {
     pywebview.api.conectar_porta_silencioso(porta);
   } catch (e) {}
   try {
     var sup = !!document.getElementById("suppress-errors-toggle").checked;
     pywebview.api.set_suppress_errors(sup).catch(function () {});
+  } catch (e) {}
+  try {
+    pywebview.api.salvar_esp32_ip_portao(ipPortao.trim()).catch(function () {});
   } catch (e) {}
   fecharConfig();
 }
@@ -204,9 +258,6 @@ function abrirModalAjuste() {
 
 function fecharModalAjuste() {
   fecharModal("modal-ajuste");
-  if (_filaAcesso.length > 0) {
-    setTimeout(processarProximaDetecção, 300);
-  }
 }
 
 // ---------------------------------------------------------------
@@ -439,14 +490,6 @@ var _modalAcessoAberto = false;
 var _filaAcesso = [];
 
 function showAcessoModal(dados) {
-  if (!dados || dados.autorizado !== true) {
-    console.log("showAcessoModal: ignorando placa não cadastrada ou não autorizada.");
-    return;
-  }
-  if (isAjusteModalAberto()) {
-    console.log("showAcessoModal: ignorando detecção durante Ajustar reconhecimento.");
-    return;
-  }
   if (_modalAcessoAberto) {
     console.log("Modal já aberto, ignorando nova detecção.");
     return;
@@ -584,24 +627,19 @@ function onPlacaDetectada(dados) {
   try {
     var obj = typeof dados === "string" ? JSON.parse(dados) : dados;
 
+    if (_modalAcessoAberto) {
+      console.log("Modal ocupado – adicionando à fila.");
+      _filaAcesso.push(obj);
+      return;
+    }
+
     var placa = obj.placa;
     var veiculo = obj.veiculo || "";
     var morador = obj.morador || "";
     var dataHora = obj.data_hora || new Date().toLocaleString();
 
     if (typeof window.showAcessoModal === "function") {
-      if (isAjusteModalAberto()) {
-        console.log("Ignorando detecção durante Ajustar reconhecimento.");
-      } else if (obj.autorizado === true) {
-        if (_modalAcessoAberto) {
-          console.log("Modal ocupado – adicionando à fila.");
-          _filaAcesso.push(obj);
-        } else {
-          window.showAcessoModal(obj);
-        }
-      } else {
-        console.log("Placa não cadastrada detectada; sem ação de acesso.");
-      }
+      window.showAcessoModal(obj);
     }
 
     var tabela = document.getElementById("tabela-acessos");
@@ -632,10 +670,6 @@ function onPlacaDetectada(dados) {
 
 function processarProximaDetecção() {
   if (_filaAcesso.length === 0) return;
-  if (isAjusteModalAberto()) {
-    console.log("Ajuste de reconhecimento aberto; aguardando antes de processar a próxima detecção.");
-    return;
-  }
   var proximo = _filaAcesso.shift();
 
   setTimeout(function () {
@@ -651,20 +685,10 @@ async function enviarComandoAbertura(tempoSegundos) {
     console.log("Automação desativada – comando de abertura ignorado.");
     return;
   }
-  if (portaoAberto) {
-    console.log("Portão já está marcado como aberto; comando OPEN ignorado.");
-    return;
-  }
   if (typeof tempoSegundos === "undefined")
     tempoSegundos = OPEN_COMMAND_DURATION;
   try {
-    var enviado = await pywebview.api.enviar_comando_portao("OPEN", tempoSegundos);
-    if (enviado) {
-      portaoAberto = true;
-      if (typeof atualizarBotoesMonitoramento === "function") {
-        atualizarBotoesMonitoramento();
-      }
-    }
+    await pywebview.api.enviar_comando_portao("OPEN", tempoSegundos);
   } catch (e) {
     console.warn("enviarComandoAbertura error", e);
   }
@@ -692,6 +716,7 @@ function iniciarCountdownAcesso(segundos) {
       _modalAcessoAberto = false;
       fecharModal("modal-acesso");
       enviarComandoAbertura();
+      marcarPortaoAbertoAuto();
       processarProximaDetecção();
     }
   }, 1000);
@@ -717,6 +742,7 @@ async function adiantarAbertura() {
   _modalAcessoAberto = false;
   fecharModal("modal-acesso");
   enviarComandoAbertura();
+  marcarPortaoAbertoAuto();
   processarProximaDetecção();
 }
 

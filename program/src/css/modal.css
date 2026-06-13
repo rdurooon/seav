@@ -239,6 +239,6 @@
 }
 
 #btn-adiantar-acesso {
-  background: #1a73e8;
+  background: var(--cor-principal);
   color: #fff;
 }

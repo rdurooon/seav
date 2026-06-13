@@ -56,7 +56,8 @@ class Api:
             port=self.credentials["port"],
             user=self.credentials["user"],
             password=self.credentials["password"],
-            database=self.credentials["database"]
+            database=self.credentials["database"],
+            connection_timeout=5
         )
 
     # ---------------- CREATE ----------------
