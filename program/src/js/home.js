@@ -627,13 +627,22 @@ function onPlacaDetectada(dados) {
   try {
     var obj = typeof dados === "string" ? JSON.parse(dados) : dados;
 
+    var placa = obj.placa;
+    var autorizado = !!obj.autorizado;
+
+    if (!autorizado) {
+      console.log("Placa não cadastrada detectada. Registrando histórico apenas.");
+      _acessoPayloadAtual = obj;
+      registrarAcessoNoHistorico("negar");
+      return;
+    }
+
     if (_modalAcessoAberto) {
       console.log("Modal ocupado – adicionando à fila.");
       _filaAcesso.push(obj);
       return;
     }
 
-    var placa = obj.placa;
     var veiculo = obj.veiculo || "";
     var morador = obj.morador || "";
     var dataHora = obj.data_hora || new Date().toLocaleString();

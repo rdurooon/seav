@@ -18,12 +18,19 @@ Segurança:
 import mysql.connector
 import json
 import os
+import sys
 from pathlib import Path
 
 class Api:
 
     def __init__(self):
-        self._credentials_path = str(Path(__file__).parent / "credencials.key")
+        if getattr(sys, "frozen", False) and getattr(sys, "_MEIPASS", None):
+            base_dir = Path(sys._MEIPASS) / "database"
+        else:
+            base_dir = Path(__file__).resolve().parent
+
+        base_dir.mkdir(parents=True, exist_ok=True)
+        self._credentials_path = str(base_dir / "credencials.key")
         self._load_credentials()
 
     def _load_credentials(self):

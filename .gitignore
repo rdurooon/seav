@@ -11,3 +11,6 @@ env.bak/
 venv.bak/
 .gitkeep
 .vscode/
+dist/
+SEAV.spec
+build/
